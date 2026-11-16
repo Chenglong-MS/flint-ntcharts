@@ -230,3 +230,17 @@ func TestBreatheRoundsPinnedValueAxes(t *testing.T) {
 		t.Fatalf("padding = %+v", opt.Padding)
 	}
 }
+
+func TestSanitizeKeepsABottomLegendAtTheBottom(t *testing.T) {
+	var o map[string]any
+	in := `{"title":{"text":"T","top":15},"legend":{"bottom":0,"left":"center"},"series":[]}`
+	if err := json.Unmarshal(Sanitize([]byte(in)), &o); err != nil {
+		t.Fatal(err)
+	}
+	if lg := o["legend"].(map[string]any); lg["top"] != "bottom" {
+		t.Fatalf("legend = %v, want top: bottom (go-analyze ignores bottom)", lg)
+	}
+	if o["title"].(map[string]any)["top"] != 15.0 {
+		t.Fatal("a title over a bottom legend keeps its place")
+	}
+}

@@ -153,8 +153,4 @@ func TestLegendBecomesATopRow(t *testing.T) {
 	if lg["orient"] != "horizontal" || lg["left"] != "center" || lg["top"] != nil || lg["right"] != nil {
 		t.Fatalf("legend = %v", lg)
 	}
-	bottom := `{"legend":{"bottom":0,"left":"center"},"series":[]}`
-	if lg := decode(t, Sanitize([]byte(bottom)))["legend"].(map[string]any); lg["orient"] != nil {
-		t.Fatalf("a bottom legend must stay as flint placed it: %v", lg)
-	}
 }

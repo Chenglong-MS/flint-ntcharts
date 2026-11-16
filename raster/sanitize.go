@@ -48,7 +48,7 @@ func Sanitize(option []byte) []byte {
 	}
 	if lg, ok := o["legend"].(map[string]any); ok {
 		sanitizeLegend(lg)
-		if t, ok := o["title"].(map[string]any); ok && lg["bottom"] == nil {
+		if t, ok := o["title"].(map[string]any); ok && lg["top"] != "bottom" {
 			stackUnderTitle(t, lg)
 		}
 	} else {
@@ -96,12 +96,17 @@ func sanitizeLegend(lg map[string]any) {
 	// legend at the right edge (right: N) falls to the left edge, over the Y
 	// axis labels, and it reserves no room beside the plot. A horizontal row
 	// at the top, which go-analyze keeps clear of the plot and wraps, reads
-	// the same. A legend flint put at the bottom stays there.
+	// the same. A legend flint put at the bottom stays there: go-analyze
+	// reads that as top "bottom", and would otherwise draw it at the top
+	// edge, over the title.
 	if b, _ := lg["bottom"]; b == nil {
 		lg["orient"], lg["left"] = "horizontal", "center"
 		delete(lg, "top")
 		delete(lg, "right")
 		delete(lg, "align")
+	} else {
+		lg["orient"], lg["top"] = "horizontal", "bottom"
+		delete(lg, "bottom")
 	}
 	for _, k := range []string{"left", "right", "top", "bottom"} {
 		if v, ok := lg[k].(string); ok && v == "middle" {
