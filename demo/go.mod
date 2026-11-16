@@ -54,4 +54,4 @@ tool (
 	github.com/NimbleMarkets/go-booba/cmd/booba-assets
 )
 
-replace github.com/NimbleMarkets/ntcharts/v2 => github.com/Chenglong-MS/ntcharts/v2 v2.9.1-0.20261116211909-3ecc34975380
+replace github.com/NimbleMarkets/ntcharts/v2 => github.com/Chenglong-MS/ntcharts/v2 v2.9.1-0.20261116214625-b0e840b7c78d
