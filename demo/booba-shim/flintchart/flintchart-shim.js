@@ -1,4 +1,4 @@
-// node_modules/flint-chart/dist/echarts/index.js
+// ../../../../../Users/chenwang/research/flint-ntcharts/js/node_modules/flint-chart/dist/echarts/index.js
 function noteSpecUpdates(output, input) {
   const count = input.updates?.length ?? 0;
   if (!count || !output || typeof output !== "object") return output;
@@ -16677,7 +16677,7 @@ function buildECEncodings(encodings, channelSemantics, declaration, data, canvas
 }
 var EC_SUPPORTED_TYPES = ecAllTemplateDefs.map((d) => d.chart);
 
-// node_modules/flint-chart/dist/core/index.js
+// ../../../../../Users/chenwang/research/flint-ntcharts/js/node_modules/flint-chart/dist/core/index.js
 function applyEncodingOverrides2(template, encodings, chartProperties) {
   const actions = template.encodingActions;
   if (!actions || actions.length === 0 || !chartProperties) return encodings;
@@ -24274,6 +24274,12 @@ function pinFittedYDomain(emit, cs, table) {
     emit.y_axis.max = padded[1];
   }
 }
+function pinZeroBaseline(emit, cs, table) {
+  const field = cs.y?.field;
+  const ys = table.map((r) => Number(r[field])).filter(Number.isFinite);
+  if (!ys.length || ys.every((y) => y >= 0)) emit.y_axis.min = 0;
+  else if (ys.every((y) => y <= 0)) emit.y_axis.max = 0;
+}
 
 // src/ntcharts/cadence.ts
 var MONTHS3 = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -24359,7 +24365,7 @@ var ntLineChartDef = {
     emit.y_axis = { ...emit.y_axis, title: cs.y?.field };
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
     if (isCategorical(ctx)) {
       finishCategorical(ctx, categorySeries(ctx), true);
@@ -24449,7 +24455,7 @@ var ntScatterPlotDef = {
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     else if (temporal) emit.x_axis.format = { kind: "time" };
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
     if (isCategorical(ctx)) {
       finishCategorical(ctx, categorySeries(ctx), false);
@@ -25108,7 +25114,7 @@ var ntConnectedScatterDef = {
     emit.y_axis = { ...emit.y_axis, title: cs.y?.field };
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
     let rows = table;
     const orderField = cs.order?.field;
