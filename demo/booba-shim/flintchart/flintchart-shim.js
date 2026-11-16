@@ -1,4 +1,4 @@
-// ../../../../../Users/chenwang/research/flint-ntcharts/js/node_modules/flint-chart/dist/echarts/index.js
+// node_modules/flint-chart/dist/echarts/index.js
 function noteSpecUpdates(output, input) {
   const count = input.updates?.length ?? 0;
   if (!count || !output || typeof output !== "object") return output;
@@ -170,11 +170,11 @@ function readIsoTimestamp(value, calendarGrain) {
   if (typeof value !== "string") return null;
   const match = value.trim().match(ISO_TIMESTAMP);
   if (!match) return null;
-  const [, day, hours, minutes, seconds = "00", fraction = "", zone] = match;
-  const midnight = Number(hours) === 0 && Number(minutes) === 0 && Number(seconds) === 0 && !/[1-9]/.test(fraction);
+  const [, day, hours2, minutes, seconds = "00", fraction = "", zone] = match;
+  const midnight = Number(hours2) === 0 && Number(minutes) === 0 && Number(seconds) === 0 && !/[1-9]/.test(fraction);
   if (calendarGrain && midnight) return day;
   if (zone) return null;
-  return `${day}T${hours}:${minutes}:${seconds}${fraction}`;
+  return `${day}T${hours2}:${minutes}:${seconds}${fraction}`;
 }
 function parseTemporalByType(value, semanticType) {
   const parsers = PARSERS_BY_TYPE[semanticType];
@@ -802,8 +802,8 @@ function resolveDomainConstraint(semanticType, annotation, values) {
     const nums = values.filter((v) => typeof v === "number" && !isNaN(v));
     if (nums.length > 0) {
       const rep = percentRepresentation(annotation, nums);
-      const M = rep === "0-1" ? 1 : 100;
-      return snapToBoundHeuristic([0, M], values);
+      const M2 = rep === "0-1" ? 1 : 100;
+      return snapToBoundHeuristic([0, M2], values);
     }
   }
   return void 0;
@@ -3583,9 +3583,9 @@ function ecApplyLayoutToSpec(option, context, warnings) {
     const maxVal = Math.max(...numericVals);
     const dataRange = maxVal - minVal;
     if (dataRange === 0) continue;
-    const pad22 = dataRange / (bandedCount - 1) / 2;
-    axisObj.min = minVal - pad22;
-    axisObj.max = maxVal + pad22;
+    const pad23 = dataRange / (bandedCount - 1) / 2;
+    axisObj.min = minVal - pad23;
+    axisObj.max = maxVal + pad23;
   }
   if (option.xAxis) {
     if (option.xAxis.name) {
@@ -4249,8 +4249,8 @@ var MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
 var MONTH_FULL2 = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 function formatTimestamp(val, d3Format) {
   const d = new Date(val);
-  const pad22 = (n) => n < 10 ? "0" + n : String(n);
-  return d3Format.replace(/%Y/g, String(d.getFullYear())).replace(/%y/g, String(d.getFullYear()).slice(-2)).replace(/%B/g, MONTH_FULL2[d.getMonth()]).replace(/%b/g, MONTH_ABBR[d.getMonth()]).replace(/%m/g, pad22(d.getMonth() + 1)).replace(/%d/g, pad22(d.getDate())).replace(/%H/g, pad22(d.getHours())).replace(/%M/g, pad22(d.getMinutes())).replace(/%S/g, pad22(d.getSeconds()));
+  const pad23 = (n) => n < 10 ? "0" + n : String(n);
+  return d3Format.replace(/%Y/g, String(d.getFullYear())).replace(/%y/g, String(d.getFullYear()).slice(-2)).replace(/%B/g, MONTH_FULL2[d.getMonth()]).replace(/%b/g, MONTH_ABBR[d.getMonth()]).replace(/%m/g, pad23(d.getMonth() + 1)).replace(/%d/g, pad23(d.getDate())).replace(/%H/g, pad23(d.getHours())).replace(/%M/g, pad23(d.getMinutes())).replace(/%S/g, pad23(d.getSeconds()));
 }
 function fmtNumForTooltip(v) {
   if (v == null) return "";
@@ -10804,8 +10804,8 @@ function isNumericField(table, field) {
 function niceBounds(min, max) {
   if (!isFinite(min) || !isFinite(max)) return null;
   if (min === max) {
-    const pad22 = Math.abs(min) > 1e-9 ? Math.abs(min) * 0.1 : 1;
-    return [min - pad22, max + pad22];
+    const pad23 = Math.abs(min) > 1e-9 ? Math.abs(min) * 0.1 : 1;
+    return [min - pad23, max + pad23];
   }
   const rawStep = (max - min) / 5;
   const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
@@ -10995,7 +10995,7 @@ var ecGraphDef = {
     };
     const layout = chartProperties?.layout === "force" ? "force" : "circular";
     const side = Math.max(420, Math.min(860, Math.round(Math.sqrt(nodeArr.length) * 155) + 40));
-    const pad22 = 64;
+    const pad23 = 64;
     const option = {
       tooltip: {
         trigger: "item",
@@ -11029,10 +11029,10 @@ var ecGraphDef = {
         },
         circular: { rotateLabel: true },
         force: { repulsion: 180, edgeLength: [50, 130], gravity: 0.08 },
-        left: pad22,
-        right: pad22,
-        top: pad22,
-        bottom: pad22
+        left: pad23,
+        right: pad23,
+        top: pad23,
+        bottom: pad23
       }],
       color: palette ?? DEFAULT_COLORS,
       _width: side,
@@ -14255,11 +14255,11 @@ function fitKey(key, at, block, plotHeight, measure2, budget) {
       const minWidth = Math.min(startWidth, fontSize * 4);
       const steps = startWidth > minWidth ? 24 : 0;
       for (let step = 0; step <= steps; step++) {
-        const textWidth2 = startWidth - (startWidth - minWidth) * step / Math.max(1, steps);
+        const textWidth22 = startWidth - (startWidth - minWidth) * step / Math.max(1, steps);
         let wrapping;
         let height = 0;
         for (let maxLines = 3; maxLines >= 1; maxLines--) {
-          wrapping = wrapAll(textWidth2, maxLines);
+          wrapping = wrapAll(textWidth22, maxLines);
           const { rowLines, heights } = wrapping;
           const rowCount = Math.ceil(labels.length / columnCount);
           height = titleHeight + Math.max(0, rowCount - 1) * rowGap + 2 * s.padding;
@@ -14268,7 +14268,7 @@ function fitKey(key, at, block, plotHeight, measure2, budget) {
           }
           if (height <= heightBudget) break;
         }
-        const { lines, widths, loss, wrappingCost } = settle(wrapping, textWidth2);
+        const { lines, widths, loss, wrappingCost } = settle(wrapping, textWidth22);
         const columnWidths = Array.from({ length: columnCount }, (_, column) => Math.max(...widths.filter((_2, index) => index % columnCount === column)));
         const extent = columnWidths.reduce((sum, column) => sum + column + symbol, 0) + gap * (columnCount - 1);
         const width = Math.max(extent + titleExtent, headingWidth) + 2 * s.padding;
@@ -14281,7 +14281,7 @@ function fitKey(key, at, block, plotHeight, measure2, budget) {
           bestCost = cost;
           columns = columnCount;
           selectedLines = lines;
-          selectedLimit = loss ? textWidth2 : 0;
+          selectedLimit = loss ? textWidth22 : 0;
           box = {
             width,
             height,
@@ -14460,10 +14460,10 @@ function planKeyLayout(keys, plot, measure2, preferences = {}) {
     const anchorOf = (edge) => {
       if (edge.orient !== "top" && edge.orient !== "bottom") return anchor;
       const width = edge.width;
-      const fits = (at) => at === "start" ? width <= plot.width + room.end : at === "end" ? width <= plot.width + room.start : (width - plot.width) / 2 <= Math.min(room.start, room.end);
-      if (fits(anchor)) return anchor;
+      const fits2 = (at) => at === "start" ? width <= plot.width + room.end : at === "end" ? width <= plot.width + room.start : (width - plot.width) / 2 <= Math.min(room.start, room.end);
+      if (fits2(anchor)) return anchor;
       const nearest = anchor === "middle" ? room.start >= room.end ? ["end", "start"] : ["start", "end"] : anchor === "start" ? ["middle", "end"] : ["middle", "start"];
-      const moved = nearest.find(fits);
+      const moved = nearest.find(fits2);
       if (!moved) return anchor;
       out2.notes.push({ path: "legend.align", code: "keys-anchor-moved", message: `the ${edge.orient} keys stand at the ${moved === "middle" ? "middle" : moved} of the plot rather than its ${anchor === "middle" ? "middle" : anchor} \u2014 ${Math.round(width)}px wide, they would run past the drawing's edge there` });
       return moved;
@@ -14541,10 +14541,10 @@ function judgeCanvas(parts) {
   const area = { width: gridWidth + yOwn, height: gridHeight + xOwn + (p.facetHeaders ?? 0) };
   const aroundWidth = (p.sideKeys ?? 0) + (p.seriesEnd ?? 0);
   const aroundHeight = (p.title ?? 0) + (p.flatYTitle ?? 0) + (p.stackedKeys ?? 0) + chrome.top + chrome.bottom;
-  const pad22 = parts.padding ?? DRAWING_PADDING;
+  const pad23 = parts.padding ?? DRAWING_PADDING;
   const drawing = {
-    width: Math.max(area.width + aroundWidth, parts.keyRowWidth ?? 0) + 2 * pad22,
-    height: area.height + aroundHeight + 2 * pad22
+    width: Math.max(area.width + aroundWidth, parts.keyRowWidth ?? 0) + 2 * pad23,
+    height: area.height + aroundHeight + 2 * pad23
   };
   const around = { height: aroundHeight / (drawing.height || 1), width: aroundWidth / (drawing.width || 1) };
   const labels = { y: yOwn / (yOwn + panel.width || 1), x: xOwn / (xOwn + panel.height || 1) };
@@ -14631,11 +14631,11 @@ function denseLineWidth(base, lines, plotHeight) {
   return width < base ? width : void 0;
 }
 var IDENTIFIER_TYPES = /* @__PURE__ */ new Set(["ID", "ZipCode"]);
-function xLabelOverflow(theme, chartProperties, channelSemantics) {
+function xLabelOverflow(theme2, chartProperties, channelSemantics) {
   const semanticType = channelSemantics.x?.semanticAnnotation?.semanticType;
   const sequence = sequenceKindOf(semanticType);
   const code = IDENTIFIER_TYPES.has(semanticType);
-  const overflow = resolveLabelOverflow(theme?.labels, chartProperties?.labelOverflow, sequence ? "sequence" : "names").filter((step) => !(channelSemantics.x?.snapshots && step === "skip"));
+  const overflow = resolveLabelOverflow(theme2?.labels, chartProperties?.labelOverflow, sequence ? "sequence" : "names").filter((step) => !(channelSemantics.x?.snapshots && step === "skip"));
   return {
     overflow,
     ...sequence ? { sequence } : {},
@@ -14903,14 +14903,14 @@ function ecKeyGeometry(component, defaults = {}) {
   const itemWidth = component?.itemWidth ?? defaults.itemWidth ?? 25;
   const itemHeight = component?.itemHeight ?? defaults.itemHeight ?? 14;
   const gap = component?.itemGap ?? base.gap;
-  const pad22 = typeof component?.padding === "number" ? component.padding : base.pad.x;
+  const pad23 = typeof component?.padding === "number" ? component.padding : base.pad.x;
   return {
     ...base,
     lead: itemWidth + 5,
     symbol: itemHeight,
     gap,
     rowGap: gap,
-    pad: { x: pad22, y: pad22 },
+    pad: { x: pad23, y: pad23 },
     entryHeight: (fontSize, lines) => Math.max(itemHeight, lines * Math.ceil(fontSize * lineHeight))
   };
 }
@@ -15388,9 +15388,9 @@ function ecFitFrame(option, context, text, planned, titleRoom = 0) {
   const foot = Math.max(footKeys, keptFoot, rampFoot);
   grid.bottom = xRoom + xNameRoom + (foot ? Math.max(0, foot + FOOT_GAP - CANVAS_BUFFER) : 0);
   const width = plot.width + grid.left + grid.right;
-  const pad22 = 2 * (EC_TITLE.padding + CANVAS_BUFFER);
-  const block = planTitleBlock(text, Math.max(width, titleRoom) - pad22, EC_TITLE);
-  if (block && block.width + pad22 > width) plot.width += Math.ceil(block.width + pad22 - width);
+  const pad23 = 2 * (EC_TITLE.padding + CANVAS_BUFFER);
+  const block = planTitleBlock(text, Math.max(width, titleRoom) - pad23, EC_TITLE);
+  if (block && block.width + pad23 > width) plot.width += Math.ceil(block.width + pad23 - width);
   if (block) {
     const room = EC_TITLE.top + 2 * EC_TITLE.padding + block.height + TITLE_GAP;
     const continuousY = yAxis.type !== "category";
@@ -16677,7 +16677,7 @@ function buildECEncodings(encodings, channelSemantics, declaration, data, canvas
 }
 var EC_SUPPORTED_TYPES = ecAllTemplateDefs.map((d) => d.chart);
 
-// ../../../../../Users/chenwang/research/flint-ntcharts/js/node_modules/flint-chart/dist/core/index.js
+// node_modules/flint-chart/dist/core/index.js
 function applyEncodingOverrides2(template, encodings, chartProperties) {
   const actions = template.encodingActions;
   if (!actions || actions.length === 0 || !chartProperties) return encodings;
@@ -17551,11 +17551,11 @@ function readIsoTimestamp2(value, calendarGrain) {
   if (typeof value !== "string") return null;
   const match = value.trim().match(ISO_TIMESTAMP2);
   if (!match) return null;
-  const [, day, hours, minutes, seconds = "00", fraction = "", zone] = match;
-  const midnight = Number(hours) === 0 && Number(minutes) === 0 && Number(seconds) === 0 && !/[1-9]/.test(fraction);
+  const [, day, hours2, minutes, seconds = "00", fraction = "", zone] = match;
+  const midnight = Number(hours2) === 0 && Number(minutes) === 0 && Number(seconds) === 0 && !/[1-9]/.test(fraction);
   if (calendarGrain && midnight) return day;
   if (zone) return null;
-  return `${day}T${hours}:${minutes}:${seconds}${fraction}`;
+  return `${day}T${hours2}:${minutes}:${seconds}${fraction}`;
 }
 function parseTemporalByType2(value, semanticType) {
   const parsers = PARSERS_BY_TYPE2[semanticType];
@@ -18563,8 +18563,8 @@ function resolveDomainConstraint2(semanticType, annotation, values) {
     const nums = values.filter((v) => typeof v === "number" && !isNaN(v));
     if (nums.length > 0) {
       const rep = percentRepresentation2(annotation, nums);
-      const M = rep === "0-1" ? 1 : 100;
-      return snapToBoundHeuristic2([0, M], values);
+      const M2 = rep === "0-1" ? 1 : 100;
+      return snapToBoundHeuristic2([0, M2], values);
     }
   }
   return void 0;
@@ -18751,6 +18751,83 @@ function resolveFieldSemantics2(input, fieldName, values) {
     sortDirection,
     binningSuggested
   };
+}
+var HEX32 = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i;
+var HEX62 = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
+var HEX82 = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
+function parseColor2(input) {
+  if (!input) return null;
+  const s = String(input).trim();
+  let m = HEX82.exec(s);
+  if (m) {
+    return {
+      r: parseInt(m[1], 16),
+      g: parseInt(m[2], 16),
+      b: parseInt(m[3], 16),
+      a: parseInt(m[4], 16) / 255
+    };
+  }
+  m = HEX62.exec(s);
+  if (m) {
+    return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16), a: 1 };
+  }
+  m = HEX32.exec(s);
+  if (m) {
+    return {
+      r: parseInt(m[1] + m[1], 16),
+      g: parseInt(m[2] + m[2], 16),
+      b: parseInt(m[3] + m[3], 16),
+      a: 1
+    };
+  }
+  return null;
+}
+function toHex2(c) {
+  const h = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+  return `#${h(c.r)}${h(c.g)}${h(c.b)}`;
+}
+function mix2(a, b, t) {
+  const k = Math.max(0, Math.min(1, t));
+  return {
+    r: a.r + (b.r - a.r) * k,
+    g: a.g + (b.g - a.g) * k,
+    b: a.b + (b.b - a.b) * k,
+    a: 1
+  };
+}
+function mixHex2(a, b, t, fallback = "#000000") {
+  const ca = parseColor2(a);
+  const cb = parseColor2(b);
+  if (!ca || !cb) return fallback;
+  return toHex2(mix2(ca, cb, t));
+}
+function luminance(c) {
+  const f = (v) => {
+    const x = v / 255;
+    return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+}
+function isDarkSurface(surface) {
+  const c = parseColor2(surface);
+  return c ? luminance(c) < 0.45 : false;
+}
+function contrastRatio(a, b) {
+  const ca = parseColor2(a);
+  const cb = parseColor2(b);
+  if (!ca || !cb) return 21;
+  const la = luminance(ca);
+  const lb = luminance(cb);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+function readableTextInk(ink, surface, min = 3) {
+  if (contrastRatio(ink, surface) >= min) return ink;
+  const away = isDarkSurface(surface) ? "#ffffff" : "#000000";
+  for (let t = 0.05; t <= 0.8 + 1e-9; t += 0.05) {
+    const candidate = mixHex2(ink, away, t, ink);
+    if (contrastRatio(candidate, surface) >= min) return candidate;
+  }
+  return mixHex2(ink, away, 0.8, ink);
 }
 function schemeName2(scheme) {
   return typeof scheme === "string" ? scheme : void 0;
@@ -21955,6 +22032,73 @@ var material = {
     }
   }
 };
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function deepMerge(base, patch) {
+  if (!isPlainObject(patch)) return patch === void 0 ? base : patch;
+  const out = isPlainObject(base) ? { ...base } : {};
+  for (const [key, value] of Object.entries(patch)) {
+    out[key] = isPlainObject(value) ? deepMerge(out[key], value) : value === void 0 ? out[key] : value;
+  }
+  return out;
+}
+var THEME_PRESETS = {
+  nyt,
+  economist,
+  swiss,
+  nature,
+  mckinsey,
+  datawrapper,
+  powerbi,
+  "powerbi-light": powerbiLight,
+  pop,
+  cartoon,
+  apple,
+  "de-stijl": deStijl,
+  bbc,
+  material
+};
+function resolveThemeSpec(theme2) {
+  if (theme2 === void 0) return void 0;
+  if (typeof theme2 === "string") return resolveThemeSpec(presetSpec(theme2));
+  if (theme2.extends === void 0) return theme2;
+  const { extends: presetId, ...overrides } = theme2;
+  const base = resolveThemeSpec(presetSpec(presetId));
+  return followInk(base, overrides, deepMerge(base, overrides));
+}
+var PAGE_ROLES = ["headline", "deck", "axisLabel", "axisTitle", "keyLabel", "keyTitle", "annotation", "footnote", "kicker", "display"];
+var sameColor = (a, b) => typeof a === "string" && typeof b === "string" && a.trim().toLowerCase() === b.trim().toLowerCase();
+function followInk(base, overrides, merged) {
+  const text = overrides.ink?.text;
+  const surface = overrides.ink?.surface;
+  if (!text && !surface || !merged.type) return merged;
+  const baseText = base.ink?.text ?? {};
+  const newText = merged.ink?.text ?? {};
+  const page = surface?.canvas ?? surface?.plot;
+  const type = { ...merged.type };
+  for (const role of PAGE_ROLES) {
+    const stated = type[role];
+    if (!stated || typeof stated.color !== "string" || overrides.type?.[role]?.color !== void 0) continue;
+    const echoed = Object.keys(baseText).find((key) => sameColor(baseText[key], stated.color));
+    let color = echoed && text?.[echoed] ? newText[echoed] : stated.color;
+    if (page && contrastRatio(color, page) < 3) {
+      const fallback = newText[echoed ?? "primary"];
+      color = fallback && contrastRatio(fallback, page) >= 3 ? fallback : readableTextInk(color, page);
+    }
+    if (color !== stated.color) type[role] = { ...stated, color };
+  }
+  return { ...merged, type };
+}
+function presetSpec(id) {
+  const preset = THEME_PRESETS[id];
+  if (!preset) {
+    throw new Error(
+      `Unknown theme \`${id}\`. Flint ships: ${Object.keys(THEME_PRESETS).join(", ")}.`
+    );
+  }
+  return preset.spec;
+}
 var NATURAL_MIN_SPREAD2 = 1.25;
 var FALLBACK_WIDEN2 = 1.5;
 function naturalAspectRange2(base, stretch, override = {}) {
@@ -24133,10 +24277,24 @@ var SEQUENTIAL = {
   redblue: ["#67001f", "#d6604d", "#f7f7f7", "#4393c3", "#053061"],
   blueorange: ["#134b73", "#4f97cc", "#b7d9ef", "#f7f7f7", "#f8d1a6", "#e08214", "#8c4109"]
 };
+var theme;
+function withThemeInks(inks, fn) {
+  const previous = theme;
+  theme = inks;
+  try {
+    return fn();
+  } finally {
+    theme = previous;
+  }
+}
+var DIVERGING = /* @__PURE__ */ new Set(["redblue", "blueorange"]);
 function paletteForScheme(scheme) {
+  if (theme?.categorical?.length) return theme.categorical;
   return CATEGORICAL[scheme ?? ""] ?? CATEGORICAL.tableau10;
 }
 function gradientForScheme(scheme) {
+  const themed = DIVERGING.has(scheme ?? "") ? theme?.diverging : theme?.sequential;
+  if (themed?.length) return themed;
   return SEQUENTIAL[scheme ?? ""] ?? SEQUENTIAL.viridis;
 }
 
@@ -24166,7 +24324,348 @@ function splitSeries(table, channelSemantics, pointOf) {
   return order.map((name, i) => ({ name, values: buckets.get(name) ?? [], color: palette[i % palette.length] })).filter((s) => s.values.length > 0);
 }
 
+// src/ntcharts/ticks.ts
+function barSlots(n, width) {
+  const bar = Math.max(1, Math.floor((width - (n - 1)) / Math.max(1, n)));
+  return { cols: Array.from({ length: n }, (_, i) => i * (bar + 1)), width, anchor: "start" };
+}
+function centerSlots(n, width) {
+  const cols = Array.from({ length: n }, (_, i) => {
+    const left = Math.floor(i * width / n), right = Math.floor((i + 1) * width / n);
+    return Math.min(width - 1, Math.floor((left + Math.max(left, right - 1)) / 2));
+  });
+  return { cols, width, anchor: "center" };
+}
+var textWidth2 = (s) => [...s].length;
+function rooms(ticks, slots) {
+  const named = ticks.map((t, i) => t ? i : -1).filter((i) => i >= 0);
+  const room = new Array(ticks.length).fill(0);
+  named.forEach((i, k) => {
+    const c = slots.cols[i];
+    if (slots.anchor === "start") {
+      const next = k + 1 < named.length ? slots.cols[named[k + 1]] - 1 : slots.width;
+      room[i] = next - c;
+    } else {
+      const lo = k > 0 ? Math.floor((slots.cols[named[k - 1]] + c) / 2) + 1 : 0;
+      const hi = k + 1 < named.length ? Math.floor((c + slots.cols[named[k + 1]] + 1) / 2) - 1 : slots.width - 1;
+      room[i] = hi - lo + 1;
+    }
+  });
+  return room;
+}
+var fits = (ticks, slots) => {
+  const room = rooms(ticks, slots);
+  return ticks.every((t, i) => !t || textWidth2(t) <= room[i]);
+};
+function ellipsize(s, room) {
+  const chars = [...s];
+  if (chars.length <= room) return s;
+  return room >= 2 ? chars.slice(0, room - 1).join("") + "\u2026" : "";
+}
+var MONTHS3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var DAY = 864e5;
+var pad22 = (n) => String(n).padStart(2, "0");
+var Y = (d) => d.getUTCFullYear();
+var M = (d) => d.getUTCMonth();
+var D = (d) => d.getUTCDate();
+var H = (d) => d.getUTCHours();
+var yearName = (d) => String(Y(d));
+var hours = (k) => ({
+  span: k * 36e5,
+  bucket: (d) => `${Y(d)}-${M(d)}-${D(d)}-${Math.floor(H(d) / k)}`,
+  minor: (d) => pad22(H(d)),
+  major: (d) => `${M(d) + 1}/${D(d)}`,
+  majorBucket: (d) => `${Y(d)}-${M(d)}-${D(d)}`,
+  startsMajor: (d) => H(d) === 0
+});
+var daysOfMonth = (span, starts) => ({
+  span,
+  bucket: (d) => `${Y(d)}-${M(d)}-${starts.filter((s) => D(d) >= s).length}`,
+  minor: (d) => String(D(d)),
+  major: (d) => MONTHS3[M(d)],
+  majorBucket: (d) => `${Y(d)}-${M(d)}`,
+  startsMajor: (d) => D(d) === 1
+});
+var months = (k, letter = false) => ({
+  span: k * 28 * DAY,
+  bucket: (d) => `${Y(d)}-${Math.floor(M(d) / k)}`,
+  minor: (d) => letter ? MONTHS3[M(d)][0] : MONTHS3[M(d)],
+  major: (d) => letter ? `'${String(Y(d)).slice(2)}` : yearName(d),
+  majorBucket: (d) => String(Y(d)),
+  startsMajor: (d) => M(d) === 0 && D(d) === 1
+});
+var years = (k, short = false) => ({
+  span: k * 365 * DAY,
+  bucket: (d) => String(Math.floor(Y(d) / k)),
+  minor: (d) => short ? `'${String(Y(d)).slice(2)}` : yearName(d),
+  major: (d) => short ? `'${String(Y(d)).slice(2)}` : yearName(d),
+  majorBucket: () => "",
+  startsMajor: () => false
+});
+var PERIODS = [
+  hours(1),
+  hours(3),
+  hours(6),
+  hours(12),
+  daysOfMonth(DAY, Array.from({ length: 31 }, (_, i) => i + 1)),
+  daysOfMonth(7 * DAY, [1, 8, 15, 22]),
+  daysOfMonth(14 * DAY, [1, 15]),
+  months(1),
+  months(3),
+  months(6),
+  months(1, true),
+  years(1),
+  years(1, true),
+  years(2),
+  years(5),
+  years(10),
+  years(20),
+  years(50),
+  years(100)
+];
+function dateTicks(dates, slots) {
+  const times = dates.map((d) => d.getTime());
+  let gap = Infinity;
+  for (let i = 1; i < times.length; i++) if (times[i] > times[i - 1]) gap = Math.min(gap, times[i] - times[i - 1]);
+  for (const p of PERIODS) {
+    if (p.span < gap * 0.9) continue;
+    const ticks = dates.map((d, i) => {
+      if (i > 0 && p.bucket(d) === p.bucket(dates[i - 1])) return "";
+      const major = i === 0 ? p.startsMajor(d) : p.majorBucket(d) !== p.majorBucket(dates[i - 1]);
+      return major ? p.major(d) : p.minor(d);
+    });
+    if (fits(ticks, slots)) return ticks;
+  }
+  return void 0;
+}
+var NICE = [1, 2, 2.5, 5];
+function numberTicks(values, display, slots) {
+  const step = values.length > 1 ? values[1] - values[0] : 0;
+  const even = step > 0 && values.every((v, i) => i === 0 || Math.abs(v - values[i - 1] - step) <= Math.abs(step) * 1e-6);
+  if (!even) return void 0;
+  for (let exp = Math.floor(Math.log10(step)); exp <= Math.ceil(Math.log10(Math.abs(values[values.length - 1]) + step)) + 1; exp++) {
+    for (const m of NICE) {
+      const stride = m * 10 ** exp;
+      const ratio = stride / step;
+      if (stride < step || Math.abs(ratio - Math.round(ratio)) > 1e-6) continue;
+      const on = (v) => Math.abs(v / stride - Math.round(v / stride)) < 1e-6;
+      if (!values.some(on)) continue;
+      const ticks = values.map((v, i) => on(v) ? display[i] : "");
+      if (fits(ticks, slots)) return ticks;
+    }
+  }
+  return void 0;
+}
+function everyKth(display, slots, from = 1) {
+  for (let k = from; k <= display.length; k++) {
+    const ticks = display.map((t, i) => i % k === 0 ? t : "");
+    if (fits(ticks, slots)) return ticks;
+  }
+  return void 0;
+}
+var DATE = /^\d{4}-\d{2}(-\d{2})?([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;
+function utcDate(key) {
+  let k = key.length === 7 ? `${key}-01` : key;
+  if (k.length > 10 && !/(Z|[+-]\d{2}:?\d{2})$/.test(k)) k = `${k.replace(" ", "T")}Z`;
+  return new Date(Date.parse(k));
+}
+var CLOCK = /^(\d{1,2}):(\d{2})(:\d{2})?$/;
+function clockTicks(keys, slots) {
+  const parts = keys.map((k) => CLOCK.exec(k));
+  const minutes = parts.map((m) => Number(m[1]) * 60 + Number(m[2]));
+  const onHour = parts.every((m) => m[2] === "00");
+  const text = (i) => onHour ? parts[i][1].padStart(2, "0") : `${parts[i][1].padStart(2, "0")}:${parts[i][2]}`;
+  for (const h of [1, 2, 3, 4, 6, 12]) {
+    const ticks = minutes.map((m, i) => m % (h * 60) === 0 ? text(i) : "");
+    if (ticks.some(Boolean) && fits(ticks, slots)) return ticks;
+  }
+  return void 0;
+}
+function tickKind(keys, ordered) {
+  const ascending = (xs) => xs.every((x, i) => i === 0 || x > xs[i - 1]);
+  if (keys.length > 1 && keys.every((k) => DATE.test(k)) && ascending(keys.map((k) => utcDate(k).getTime()))) return "date";
+  if (keys.length > 1 && keys.every((k) => k.trim() !== "" && Number.isFinite(Number(k))) && ascending(keys.map(Number))) return "number";
+  if (keys.length > 1 && keys.every((k) => CLOCK.test(k)) && ascending(keys.map((k) => Number(k.replace(":", "."))))) return "ordinal";
+  return ordered ? "ordinal" : "nominal";
+}
+function planTicks(keys, display, kind, slots, stride) {
+  if (kind === "date" && !stride) {
+    const named = dateTicks(keys.map(utcDate), slots);
+    if (named) return { ticks: named, shortened: false };
+  }
+  if (fits(display, slots) && !stride) return { ticks: display, shortened: false };
+  if (kind !== "nominal") {
+    if (stride && stride >= 1) {
+      const ticks = display.map((t, i) => i % Math.round(stride) === 0 ? t : "");
+      return { ticks: ellipsizeAll(ticks, slots), shortened: false };
+    }
+    const planned = kind === "number" && numberTicks(keys.map(Number), display, slots) || keys.every((k) => CLOCK.test(k)) && clockTicks(keys, slots) || everyKth(display, slots);
+    if (planned) return { ticks: planned, shortened: false };
+  }
+  return { ticks: ellipsizeAll(display, slots), shortened: true };
+}
+function ellipsizeAll(ticks, slots) {
+  const room = rooms(ticks, slots);
+  return ticks.map((t, i) => t ? ellipsize(t, room[i]) : "");
+}
+
+// src/ntcharts/format.ts
+function patternPrecision(pattern, fallback) {
+  const m = /\.(\d+)/.exec(pattern);
+  return m ? parseInt(m[1], 10) : fallback;
+}
+function formatSpecToNt(fmt2, warn) {
+  if (!fmt2) return void 0;
+  const { pattern, prefix, suffix, abbreviate } = fmt2;
+  if (suffix) {
+    warn({
+      severity: "info",
+      code: "format-suffix-dropped",
+      message: `ntcharts-spec has no format suffix; dropping ${JSON.stringify(suffix)}`
+    });
+  }
+  if (prefix) {
+    return { kind: "currency", currency: prefix, precision: patternPrecision(pattern ?? "", 2) };
+  }
+  if (pattern && pattern.includes("%")) {
+    return { kind: "percent", precision: patternPrecision(pattern, 0) };
+  }
+  if (abbreviate) return { kind: "si", precision: 1 };
+  if (pattern) {
+    if (/d$/.test(pattern)) return { kind: "number", precision: 0 };
+    return { kind: "number", precision: patternPrecision(pattern, 2) };
+  }
+  return void 0;
+}
+var D3_TO_GO = [
+  ["%Y", "2006"],
+  ["%y", "06"],
+  ["%B", "January"],
+  ["%b", "Jan"],
+  ["%m", "01"],
+  ["%A", "Monday"],
+  ["%a", "Mon"],
+  ["%d", "02"],
+  ["%e", "_2"],
+  ["%H", "15"],
+  ["%I", "03"],
+  ["%M", "04"],
+  ["%S", "05"],
+  ["%p", "PM"],
+  ["%Z", "MST"]
+];
+function d3TimeToGoLayout(d3fmt, warn) {
+  let out = d3fmt;
+  for (const [from, to] of D3_TO_GO) out = out.split(from).join(to);
+  if (/%[A-Za-z]/.test(out)) {
+    warn({
+      severity: "info",
+      code: "time-format-partial",
+      message: `d3 time format ${JSON.stringify(d3fmt)} contains untranslatable tokens; passed through`
+    });
+  }
+  return out;
+}
+function valueText(v, fmt2) {
+  const fixed = (x, prec) => prec == null || prec < 0 ? String(x) : x.toFixed(prec);
+  const si = (x, prec) => {
+    for (const [f, s] of [[1e12, "T"], [1e9, "G"], [1e6, "M"], [1e3, "k"]]) {
+      if (Math.abs(x) >= f) return (x / f).toFixed(prec) + s;
+    }
+    return x.toFixed(prec);
+  };
+  if (!fmt2 || !fmt2.kind && fmt2.precision == null && !fmt2.currency) {
+    if (Math.abs(v) >= 1e3) return si(v, 1).replace(".0", "");
+    return String(Number(v.toPrecision(3)));
+  }
+  switch (fmt2.kind) {
+    case "percent":
+      return (v * 100).toFixed(fmt2.precision ?? 0) + "%";
+    case "currency":
+      return (fmt2.currency || "$") + v.toFixed(fmt2.precision ?? 2);
+    case "si":
+      return si(v, fmt2.precision == null || fmt2.precision < 0 ? 1 : fmt2.precision);
+    default:
+      return fixed(v, fmt2.precision);
+  }
+}
+
+// src/ntcharts/bands.ts
+var categoryKey = (value) => String(value);
+var isDateString = (s) => /^\d{4}-\d{2}(-\d{2})?([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/.test(s);
+function categoryOrder(table, catCS, encoding, measure2) {
+  const field = catCS.field;
+  const seen = [];
+  const rowsOf = /* @__PURE__ */ new Map();
+  for (const row of table) {
+    if (row[field] == null) continue;
+    const key = categoryKey(row[field]);
+    if (!rowsOf.has(key)) {
+      rowsOf.set(key, []);
+      seen.push(key);
+    }
+    rowsOf.get(key).push(row);
+  }
+  let order = seen;
+  const preferred = catCS.ordinalSortOrder;
+  if (preferred?.length) {
+    const rank = new Map(preferred.map((v, i) => [categoryKey(v), i]));
+    order = [...seen].sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity));
+  } else if (seen.length > 1 && seen.every(isDateString)) {
+    order = [...seen].sort((a, b) => Date.parse(a) - Date.parse(b));
+  }
+  if (encoding?.sortBy && encoding.sortOrder) {
+    const dir = encoding.sortOrder === "ascending" ? 1 : -1;
+    const value = new Map(order.map((k) => [k, measure2(rowsOf.get(k) ?? [])]));
+    order = [...order].sort((a, b) => dir * ((value.get(a) ?? 0) - (value.get(b) ?? 0)));
+  }
+  return order;
+}
+function combineOp(valCS, aggregate) {
+  return resolvePivotAggregate(aggregate, valCS.aggregationDefault);
+}
+function combine(values, op) {
+  if (op === "count") return values.length;
+  const total = values.reduce((a, b) => a + b, 0);
+  return op === "average" ? total / values.length : total;
+}
+function categoryLabels(keys) {
+  if (!keys.length || !keys.every(isDateString)) return keys;
+  const parts = keys.map((k) => ({ k, date: k.slice(0, 10), time: k.length > 10 ? k.slice(11, 16) : "" }));
+  if (parts.some((p) => p.time && p.time !== "00:00")) return keys.map((k) => k.slice(0, 16).replace("T", " "));
+  const unique = (labels) => new Set(labels).size === labels.length;
+  const day = (d) => d.length === 7 ? "01" : d.slice(8, 10);
+  const firstOfMonth = parts.every((p) => day(p.date) === "01");
+  const years2 = parts.map((p) => p.date.slice(0, 4));
+  if (firstOfMonth && parts.every((p) => p.date.slice(5, 7) === "01") && unique(years2)) return years2;
+  const months2 = parts.map((p) => p.date.slice(0, 7));
+  if (firstOfMonth && unique(months2)) return months2;
+  return parts.map((p) => p.date);
+}
+function bandTicks(ctx, keys, display, ordered, slots, field, channel) {
+  const stride = Number(ctx.chartProperties?.labelStride);
+  const kind = tickKind(keys, ordered);
+  const plan = planTicks(keys, display, kind, slots, Number.isFinite(stride) && stride >= 1 ? stride : void 0);
+  if (plan.shortened) {
+    ctx.warn({
+      severity: "info",
+      code: "labels-shortened",
+      message: `names of ${field} cut to fit: the axis runs ${display[0]} to ${display[display.length - 1]}`,
+      channel,
+      field
+    });
+  }
+  return plan.ticks.every((t, i) => t === display[i]) ? void 0 : plan.ticks;
+}
+function wantValueLabels(props, totals, format3, width, horizontal) {
+  if (typeof props?.valueLabels === "boolean") return props.valueLabels;
+  const widest = Math.max(0, ...totals.map((t) => valueText(t, format3).length));
+  const room = horizontal ? width : (barSlots(totals.length, width).cols[1] ?? width + 1) - 1;
+  return totals.length <= 16 && widest <= room;
+}
+
 // src/ntcharts/category.ts
+var Y_LABEL_ROOM = 9;
 var discrete = (t) => t === "nominal" || t === "ordinal";
 function orientMeasure(ctx) {
   const cs = ctx.channelSemantics;
@@ -24219,6 +24718,10 @@ function finishCategorical(ctx, series, line) {
     if (line) s.values.sort((a, b) => ranks.get(String(a.x)) - ranks.get(String(b.x)));
   }
   ctx.emit.x_axis = { type: "category", title: field, labels };
+  const cs = ctx.channelSemantics.x;
+  const ordered = cs.type === "ordinal" || !!cs.ordinalSortOrder?.length;
+  const ticks = bandTicks(ctx, labels, labels, ordered, centerSlots(labels.length, Math.max(1, ctx.emit.width - Y_LABEL_ROOM)), field, "x");
+  if (ticks) ctx.emit.x_axis.tick_labels = ticks;
   ctx.emit.data.series = series;
   if (series.length > 1) ctx.emit.options = { ...ctx.emit.options, show_legend: true };
   if (dropped) ctx.warn({
@@ -24250,7 +24753,10 @@ function categorySeries(ctx) {
     code: "facets-flattened",
     message: "terminal categorical chart draws facets as separate series on one plot"
   });
-  const flat = [...buckets].flatMap(([key, rows]) => splitSeries(rows, semantics, point).map((s) => ({ ...s, name: `${JSON.parse(key).map(String).join(" / ")}: ${s.name}` })));
+  const flat = [...buckets].flatMap(([key, rows]) => splitSeries(rows, semantics, point).map((s) => {
+    const facet = JSON.parse(key).map(String).join(" / ");
+    return { ...s, name: s.name === ctx.channelSemantics.y?.field ? facet : `${facet}: ${s.name}` };
+  }));
   const palette = paletteForScheme(void 0);
   return flat.map((s, i) => flat.length > 1 && !s.color ? { ...s, color: palette[i % palette.length] } : s);
 }
@@ -24270,8 +24776,8 @@ function pinFittedYDomain(emit, cs, table) {
   const values = table.map((row) => row[field]).filter((v) => typeof v === "number" && Number.isFinite(v));
   const padded = computePaddedDomain2(values, decision.domainPadFraction);
   if (padded) {
-    emit.y_axis.min = padded[0];
-    emit.y_axis.max = padded[1];
+    emit.y_axis.min = values.every((v) => v >= 0) ? Math.max(0, padded[0]) : padded[0];
+    emit.y_axis.max = values.every((v) => v <= 0) ? Math.min(0, padded[1]) : padded[1];
   }
 }
 function pinZeroBaseline(emit, cs, table) {
@@ -24282,34 +24788,6 @@ function pinZeroBaseline(emit, cs, table) {
 }
 
 // src/ntcharts/cadence.ts
-var MONTHS3 = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-var pad3 = (n, w = 2) => String(n).padStart(w, "0");
-function formatTime(ms, d3) {
-  const t = new Date(ms);
-  const h = t.getUTCHours();
-  const parts = {
-    Y: String(t.getUTCFullYear()),
-    y: pad3(t.getUTCFullYear() % 100),
-    m: pad3(t.getUTCMonth() + 1),
-    b: MONTHS3[t.getUTCMonth()].slice(0, 3),
-    B: MONTHS3[t.getUTCMonth()],
-    d: pad3(t.getUTCDate()),
-    e: String(t.getUTCDate()).padStart(2, " "),
-    a: DAYS[t.getUTCDay()].slice(0, 3),
-    A: DAYS[t.getUTCDay()],
-    H: pad3(h),
-    I: pad3(h % 12 || 12),
-    M: pad3(t.getUTCMinutes()),
-    S: pad3(t.getUTCSeconds()),
-    p: h < 12 ? "AM" : "PM",
-    q: String(Math.floor(t.getUTCMonth() / 3) + 1),
-    "%": "%"
-  };
-  let unknown = false;
-  const out = d3.replace(/%[-_0]?([a-zA-Z%])/g, (_, c) => parts[c] ?? (unknown = true, ""));
-  return unknown ? void 0 : out.trim();
-}
 function regularDates(values) {
   const ms = [...new Set(values.map(toMs).filter(Number.isFinite))].sort((a, b) => a - b);
   if (ms.length < 2) return void 0;
@@ -24323,25 +24801,8 @@ function regularDates(values) {
   const step = ms[1] - ms[0];
   return ms.every((v, i) => i === 0 || v - ms[i - 1] === step) ? ms : void 0;
 }
-function dateSlots(values, d3, width) {
-  if (!values.every((v) => v == null || Number.isFinite(toMs(v)))) return void 0;
-  const dates = regularDates(values.filter((v) => v != null));
-  if (!dates || !d3) return void 0;
-  const labels = dates.map((ms) => formatTime(ms, d3));
-  if (labels.some((l) => l == null) || new Set(labels).size !== labels.length) return void 0;
-  const widest = Math.max(...labels.map((l) => l.length));
-  if (dates.length * (widest + 1) > width) return void 0;
-  const byKey = /* @__PURE__ */ new Map();
-  for (const v of values) {
-    const ms = toMs(v);
-    const i = dates.indexOf(ms);
-    if (i >= 0) byKey.set(String(v), labels[i]);
-  }
-  return byKey;
-}
 
 // src/ntcharts/templates/line.ts
-var Y_LABEL_ROOM = 9;
 var ntLineChartDef = {
   chart: "Line Chart",
   template: { mark: "line" },
@@ -24350,10 +24811,17 @@ var ntLineChartDef = {
   instantiate: (_spec, rawCtx) => {
     let ctx = rawCtx;
     const x0 = ctx.channelSemantics.x;
-    const slots = x0?.type === "temporal" ? dateSlots(ctx.table.map((r) => r[x0.field]), x0.temporalFormat, ctx.emit.width - Y_LABEL_ROOM) : void 0;
-    if (slots) {
-      const order = [...slots.keys()].sort((a, b) => toMs(a) - toMs(b));
-      ctx = { ...ctx, channelSemantics: { ...ctx.channelSemantics, x: { ...x0, type: "ordinal", ordinalSortOrder: order } } };
+    if (x0?.type === "temporal") {
+      const values = ctx.table.map((r) => r[x0.field]);
+      const dates = values.every((v) => v == null || Number.isFinite(toMs(v))) ? regularDates(values.filter((v) => v != null)) : void 0;
+      if (dates && dates.length <= Math.floor((ctx.emit.width - Y_LABEL_ROOM) / 2)) {
+        const key = (v) => {
+          const iso = new Date(toMs(v)).toISOString();
+          return iso.endsWith("T00:00:00.000Z") ? iso.slice(0, 10) : iso.slice(0, 16);
+        };
+        const table2 = ctx.table.map((r) => r[x0.field] == null ? r : { ...r, [x0.field]: key(r[x0.field]) });
+        ctx = { ...ctx, table: table2, channelSemantics: { ...ctx.channelSemantics, x: { ...x0, type: "ordinal", ordinalSortOrder: dates.map(key) } } };
+      }
     }
     const { emit, channelSemantics: cs, table } = ctx;
     if (cs.y?.type !== "quantitative") {
@@ -24369,10 +24837,6 @@ var ntLineChartDef = {
     else pinFittedYDomain(emit, cs, table);
     if (isCategorical(ctx)) {
       finishCategorical(ctx, categorySeries(ctx), true);
-      if (slots) {
-        emit.x_axis.labels = emit.x_axis.labels.map((k) => slots.get(k) ?? k);
-        for (const s of emit.data.series) for (const p of s.values ?? []) p.x = slots.get(String(p.x)) ?? p.x;
-      }
       return;
     }
     const xField = cs.x.field;
@@ -24502,64 +24966,6 @@ var ntStripPlotDef = {
   }
 };
 
-// src/ntcharts/format.ts
-function patternPrecision(pattern, fallback) {
-  const m = /\.(\d+)/.exec(pattern);
-  return m ? parseInt(m[1], 10) : fallback;
-}
-function formatSpecToNt(fmt2, warn) {
-  if (!fmt2) return void 0;
-  const { pattern, prefix, suffix, abbreviate } = fmt2;
-  if (suffix) {
-    warn({
-      severity: "info",
-      code: "format-suffix-dropped",
-      message: `ntcharts-spec has no format suffix; dropping ${JSON.stringify(suffix)}`
-    });
-  }
-  if (prefix) {
-    return { kind: "currency", currency: prefix, precision: patternPrecision(pattern ?? "", 2) };
-  }
-  if (pattern && pattern.includes("%")) {
-    return { kind: "percent", precision: patternPrecision(pattern, 0) };
-  }
-  if (abbreviate) return { kind: "si", precision: 1 };
-  if (pattern) {
-    if (/d$/.test(pattern)) return { kind: "number", precision: 0 };
-    return { kind: "number", precision: patternPrecision(pattern, 2) };
-  }
-  return void 0;
-}
-var D3_TO_GO = [
-  ["%Y", "2006"],
-  ["%y", "06"],
-  ["%B", "January"],
-  ["%b", "Jan"],
-  ["%m", "01"],
-  ["%A", "Monday"],
-  ["%a", "Mon"],
-  ["%d", "02"],
-  ["%e", "_2"],
-  ["%H", "15"],
-  ["%I", "03"],
-  ["%M", "04"],
-  ["%S", "05"],
-  ["%p", "PM"],
-  ["%Z", "MST"]
-];
-function d3TimeToGoLayout(d3fmt, warn) {
-  let out = d3fmt;
-  for (const [from, to] of D3_TO_GO) out = out.split(from).join(to);
-  if (/%[A-Za-z]/.test(out)) {
-    warn({
-      severity: "info",
-      code: "time-format-partial",
-      message: `d3 time format ${JSON.stringify(d3fmt)} contains untranslatable tokens; passed through`
-    });
-  }
-  return out;
-}
-
 // src/ntcharts/templates/combo.ts
 var ntComboChartDef = {
   chart: "Combo Chart",
@@ -24641,118 +25047,12 @@ var ntComboChartDef = {
   }
 };
 
-// src/ntcharts/bands.ts
-var categoryKey = (value) => String(value);
-var isDateString = (s) => /^\d{4}-\d{2}(-\d{2})?([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/.test(s);
-function categoryOrder(table, catCS, encoding, measure2) {
-  const field = catCS.field;
-  const seen = [];
-  const rowsOf = /* @__PURE__ */ new Map();
-  for (const row of table) {
-    if (row[field] == null) continue;
-    const key = categoryKey(row[field]);
-    if (!rowsOf.has(key)) {
-      rowsOf.set(key, []);
-      seen.push(key);
-    }
-    rowsOf.get(key).push(row);
-  }
-  let order = seen;
-  const preferred = catCS.ordinalSortOrder;
-  if (preferred?.length) {
-    const rank = new Map(preferred.map((v, i) => [categoryKey(v), i]));
-    order = [...seen].sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity));
-  } else if (seen.length > 1 && seen.every(isDateString)) {
-    order = [...seen].sort((a, b) => Date.parse(a) - Date.parse(b));
-  }
-  if (encoding?.sortBy && encoding.sortOrder) {
-    const dir = encoding.sortOrder === "ascending" ? 1 : -1;
-    const value = new Map(order.map((k) => [k, measure2(rowsOf.get(k) ?? [])]));
-    order = [...order].sort((a, b) => dir * ((value.get(a) ?? 0) - (value.get(b) ?? 0)));
-  }
-  return order;
-}
-function combineOp(valCS, aggregate) {
-  return resolvePivotAggregate(aggregate, valCS.aggregationDefault);
-}
-function combine(values, op) {
-  if (op === "count") return values.length;
-  const total = values.reduce((a, b) => a + b, 0);
-  return op === "average" ? total / values.length : total;
-}
-function categoryLabels(keys) {
-  if (!keys.length || !keys.every(isDateString)) return keys;
-  const parts = keys.map((k) => ({ k, date: k.slice(0, 10), time: k.length > 10 ? k.slice(11, 16) : "" }));
-  if (parts.some((p) => p.time && p.time !== "00:00")) return keys.map((k) => k.slice(0, 16).replace("T", " "));
-  const unique = (labels) => new Set(labels).size === labels.length;
-  const day = (d) => d.length === 7 ? "01" : d.slice(8, 10);
-  const firstOfMonth = parts.every((p) => day(p.date) === "01");
-  const years = parts.map((p) => p.date.slice(0, 4));
-  if (firstOfMonth && parts.every((p) => p.date.slice(5, 7) === "01") && unique(years)) return years;
-  const months = parts.map((p) => p.date.slice(0, 7));
-  if (firstOfMonth && unique(months)) return months;
-  return parts.map((p) => p.date);
-}
-var MONTHS4 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function dateForms(keys, labels) {
-  const d = keys.map((k) => ({ y: k.slice(0, 4), m: k.slice(5, 7), day: k.length >= 10 ? k.slice(8, 10) : "01", t: k.length > 10 ? k.slice(11, 16) : "" }));
-  const oneYear = new Set(d.map((p) => p.y)).size === 1;
-  const startsYear = (i) => i === 0 || d[i].y !== d[i - 1].y;
-  const startsMonth = (i) => startsYear(i) || d[i].m !== d[i - 1].m;
-  const startsDay = (i) => i === 0 || keys[i].slice(0, 10) !== keys[i - 1].slice(0, 10);
-  const time = keys.map((k) => Date.parse(k.slice(0, 10)));
-  const daily = time.every((t, i) => i === 0 || t - time[i - 1] <= 3 * 864e5);
-  const month = (p) => MONTHS4[Number(p.m) - 1] ?? p.m;
-  const form = (lossy, f) => ({ labels: d.map(f), lossy });
-  const yearMarks = [
-    form(true, (p, i) => startsYear(i) ? `'${p.y.slice(2)}` : ""),
-    form(true, (p, i) => startsYear(i) ? p.y.slice(2) : "")
-  ];
-  switch (labels[0]?.length) {
-    case 4:
-      return [form(false, (p) => `'${p.y.slice(2)}`), form(false, (p) => p.y.slice(2))];
-    case 7:
-      return [
-        form(false, (p, i) => startsYear(i) ? p.y : month(p)),
-        form(false, (p, i) => startsYear(i) ? `'${p.y.slice(2)}` : month(p)),
-        form(!oneYear, (p) => p.m),
-        ...oneYear ? [form(false, (p) => month(p)[0])] : yearMarks
-      ];
-    case 10:
-      return [
-        form(!oneYear, (p) => `${p.m}-${p.day}`),
-        ...daily ? [form(!oneYear, (p, i) => startsMonth(i) ? month(p) : p.day)] : [],
-        ...oneYear ? [form(true, (p, i) => startsMonth(i) ? month(p) : "")] : yearMarks,
-        ...daily ? [form(true, (p) => p.day)] : []
-      ];
-    default:
-      return [
-        form(!oneYear, (p) => `${p.m}-${p.day} ${p.t}`),
-        form(true, (p, i) => startsDay(i) ? `${p.m}-${p.day}` : p.t),
-        form(true, (p) => p.t),
-        form(true, (p) => p.t.slice(0, 2))
-      ];
-  }
-}
-function fitBandLabels(keys, labels, room) {
-  const fits = (ls) => ls.every((l) => l.length <= room);
-  if (fits(labels)) return { labels, lossy: false };
-  if (keys.every(isDateString)) {
-    return dateForms(keys, labels).find((f) => fits(f.labels)) ?? { labels: keys.map(() => ""), lossy: true };
-  }
-  if (keys.every((k) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(k))) {
-    const onTheHour = keys.every((k) => /:00(:00)?$/.test(k));
-    const hours = { labels: keys.map((k) => k.split(":")[0].padStart(2, "0")), lossy: !onTheHour };
-    return [{ labels: keys.map((k) => k.slice(0, 5)), lossy: false }, hours].find((f) => fits(f.labels)) ?? { labels: keys.map(() => ""), lossy: true };
-  }
-  if (keys.every((k) => k.trim() !== "" && Number.isFinite(Number(k)))) {
-    return { labels: labels.map((l) => l.length <= room ? l : ""), lossy: true };
-  }
-  return { labels, lossy: false };
-}
-var barRoom = (width, n) => Math.max(1, Math.floor((width - (n - 1)) / Math.max(1, n)));
-
 // src/ntcharts/templates/bar.ts
+function fitsUnder(labels, width) {
+  const { cols } = barSlots(labels.length, width);
+  const room = (cols[1] ?? width + 1) - 1;
+  return labels.every((l) => [...l].length <= room);
+}
 var ntBarChartDef = {
   chart: "Bar Chart",
   template: { mark: "bar" },
@@ -24787,23 +25087,43 @@ var ntBarChartDef = {
     const values = (rows) => rows.map((r) => Number(r[valCS.field])).filter(Number.isFinite);
     const measure2 = (rows) => rows.length ? combine(values(rows), op) : 0;
     emit.type = "bar";
-    if (horizontal) emit.options = { ...emit.options, orientation: "horizontal" };
-    const keys = categoryOrder(table, catCS, encodings[catAxis], measure2);
+    let keys = categoryOrder(table, catCS, encodings[catAxis], measure2);
     let labels = categoryLabels(keys);
-    if (!horizontal && emit.width) {
-      const fitted = fitBandLabels(keys, labels, barRoom(emit.width, keys.length));
-      if (fitted.lossy) {
+    emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field };
+    const ordered = catCS.type !== "nominal" && !encodings[catAxis]?.sortBy;
+    const asked = ctx.chartProperties?.orientation;
+    let across = asked === "horizontal" || asked !== "vertical" && horizontal;
+    if (!across && !asked && tickKind(keys, ordered) === "nominal" && !fitsUnder(labels, emit.width) && keys.length * 2 - 1 <= emit.height) {
+      across = true;
+      ctx.warn({
+        severity: "info",
+        code: "bars-horizontal",
+        message: `drawn as horizontal bars so each ${catCS.field} name fits`,
+        channel: catAxis,
+        field: catCS.field
+      });
+    }
+    if (across) {
+      emit.options = { ...emit.options, orientation: "horizontal" };
+      const room = Math.max(1, Math.floor((emit.height + 1) / 2));
+      if (keys.length > room) {
         ctx.warn({
-          severity: "info",
-          code: "labels-shortened",
-          message: `bars are too narrow to name every ${catCS.field}: the axis runs ${labels[0]} to ${labels[labels.length - 1]}`,
+          severity: "warning",
+          code: "overflow",
+          message: `${keys.length - room} of ${keys.length} values in '${catCS.field}' were omitted (showing first ${room} in sort order).`,
           channel: catAxis,
           field: catCS.field
         });
+        keys = keys.slice(0, room);
+        labels = labels.slice(0, room);
+        emit.x_axis.labels = labels;
       }
-      labels = fitted.labels;
+      const cap = Math.max(4, Math.floor(emit.width / 3));
+      if (labels.some((l) => [...l].length > cap)) emit.x_axis.tick_labels = labels.map((l) => ellipsize(l, cap));
+    } else {
+      const ticks = bandTicks(ctx, keys, labels, ordered, barSlots(keys.length, emit.width), catCS.field, catAxis);
+      if (ticks) emit.x_axis.tick_labels = ticks;
     }
-    emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field };
     emit.y_axis = { ...emit.y_axis, title: valCS.field };
     const valueFormat = horizontal ? ctx.ntFormatX : ctx.ntFormatY;
     if (valueFormat) emit.y_axis.format = valueFormat;
@@ -24838,6 +25158,8 @@ var ntBarChartDef = {
     }).filter((s) => cells.get(s.name).size > 0);
     emit.data.series = series;
     if (series.length > 1) emit.options = { ...emit.options, stacked: true, show_legend: true };
+    const totals = keys.map((_, i) => series.reduce((sum, s) => sum + s.values[i].y, 0));
+    if (wantValueLabels(ctx.chartProperties, totals, emit.y_axis?.format, emit.width, across)) emit.options = { ...emit.options, show_values: true };
     const lowest = Math.min(0, ...series.flatMap((s) => s.values.map((p) => p.y)));
     if (valCS.zero?.zero && lowest >= 0) emit.y_axis.min = 0;
     if (facets.length) {
@@ -25210,18 +25532,11 @@ var ntHistogramDef = {
     if (requested > capacity && bins.counts.length > 0) {
       ctx.warn({ severity: "info", code: "overflow", message: `using ${bins.counts.length} bins instead of ${requested}: that is all the width fits` });
     }
-    const labels = edgeLabels(bins.edges.slice(0, bins.counts.length), barRoom(emit.width, bins.counts.length));
-    if (labels.some((l) => !l)) {
-      ctx.warn({
-        severity: "info",
-        code: "labels-shortened",
-        message: `bars are too narrow to name every bin: ${measure2} runs ${edgeLabels([bins.edges[0]])[0]} to ${edgeLabels([bins.edges[bins.edges.length - 1]])[0]}`,
-        channel: "x",
-        field: measure2
-      });
-    }
+    const labels = edgeLabels(bins.edges.slice(0, bins.counts.length));
     emit.type = "bar";
     emit.x_axis = { ...emit.x_axis, type: "category", labels, title: measure2 };
+    const ticks = bandTicks(ctx, labels, labels, true, barSlots(labels.length, emit.width), measure2, "x");
+    if (ticks) emit.x_axis.tick_labels = ticks;
     emit.y_axis = { ...emit.y_axis, title: "Count", min: 0 };
     const groups = [];
     for (const r of rows) if (!groups.includes(r.g)) groups.push(r.g);
@@ -25241,6 +25556,7 @@ var ntHistogramDef = {
       };
     });
     if (groups.length > 1) emit.options = { ...emit.options, stacked: true, show_legend: true };
+    if (wantValueLabels(ctx.chartProperties, bins.counts, void 0, emit.width, false)) emit.options = { ...emit.options, show_values: true };
   },
   encodingActions: [],
   pivot: makeCartesianPivot2({ permute: [["x", "color"]], shift: ["color"] })
@@ -25278,11 +25594,11 @@ var ntLollipopChartDef = {
 };
 
 // src/ntcharts/calendar.ts
-var DAY = 864e5;
-var MONTHS5 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var DAY2 = 864e5;
+var MONTHS4 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var WEEKDAYS2 = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-var dayStart = (t) => Math.floor(t / DAY) * DAY;
-var weekday = (day) => ((Math.floor(day / DAY) + 3) % 7 + 7) % 7;
+var dayStart = (t) => Math.floor(t / DAY2) * DAY2;
+var weekday = (day) => ((Math.floor(day / DAY2) + 3) % 7 + 7) % 7;
 function calendarGrid(points) {
   if (points.length === 0) return { weeks: 0, cells: [], labels: [] };
   const byDay = /* @__PURE__ */ new Map();
@@ -25291,20 +25607,20 @@ function calendarGrid(points) {
     byDay.set(d, (byDay.get(d) ?? 0) + p.v);
   }
   const days = [...byDay.keys()].sort((a, b) => a - b);
-  const first = days[0] - weekday(days[0]) * DAY;
-  const weeks = Math.floor((days[days.length - 1] - first) / (7 * DAY)) + 1;
+  const first = days[0] - weekday(days[0]) * DAY2;
+  const weeks = Math.floor((days[days.length - 1] - first) / (7 * DAY2)) + 1;
   const cells = days.map((d) => ({
-    x: Math.floor((d - first) / (7 * DAY)),
+    x: Math.floor((d - first) / (7 * DAY2)),
     y: weekday(d),
     z: byDay.get(d)
   }));
   const labels = Array.from({ length: weeks }, (_, w) => {
-    const start = first + w * 7 * DAY;
+    const start = first + w * 7 * DAY2;
     for (let d = 0; d < 7; d++) {
-      const date3 = new Date(start + d * DAY);
-      if (date3.getUTCDate() === 1) return MONTHS5[date3.getUTCMonth()];
+      const date3 = new Date(start + d * DAY2);
+      if (date3.getUTCDate() === 1) return MONTHS4[date3.getUTCMonth()];
     }
-    return w === 0 ? MONTHS5[new Date(days[0]).getUTCMonth()] : "";
+    return w === 0 ? MONTHS4[new Date(days[0]).getUTCMonth()] : "";
   });
   return { weeks, cells, labels };
 }
@@ -25445,27 +25761,24 @@ var ntGroupedBarChartDef = {
       if (i > 0) bars2.push({ label: "", value: 0 });
       lanes.forEach((g, j) => bars2.push({ label: j === 0 ? names[i] : "", group: g, value: measure2(cells.get(JSON.stringify([k, g])) ?? []) }));
     });
-    let labels = bars2.map((b) => b.label);
+    const labels = bars2.map((b) => b.label);
+    let tickLabels;
     if (!horizontal) {
       const firsts = bars2.map((b, i) => b.label ? i : -1).filter((i) => i >= 0);
-      const fitted = fitBandLabels(keys, names, barRoom(emit.width, bars2.length));
-      firsts.forEach((barIndex, i) => {
-        labels[barIndex] = fitted.labels[i];
-      });
-      if (fitted.lossy) {
-        ctx.warn({
-          severity: "info",
-          code: "labels-shortened",
-          message: `bars are too narrow to name every ${catCS.field}: the axis runs ${names[0]} to ${names[names.length - 1]}`,
-          channel: catAxis,
-          field: catCS.field
+      const { cols } = barSlots(bars2.length, emit.width);
+      const ordered = catCS.type !== "nominal" && !encodings[catAxis]?.sortBy;
+      const ticks = bandTicks(ctx, keys, names, ordered, { cols: firsts.map((b) => cols[b]), width: emit.width, anchor: "start" }, catCS.field, catAxis);
+      if (ticks) {
+        tickLabels = labels.map(() => "");
+        firsts.forEach((b, i) => {
+          tickLabels[b] = ticks[i];
         });
       }
     }
     const palette = paletteForScheme(groupCS.type === "quantitative" ? void 0 : groupCS.colorScheme?.scheme);
     emit.type = "bar";
     emit.options = { ...emit.options, stacked: true, show_legend: true, ...horizontal ? { orientation: "horizontal" } : {} };
-    emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field };
+    emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field, ...tickLabels ? { tick_labels: tickLabels } : {} };
     emit.y_axis = { ...emit.y_axis, title: valCS.field };
     const valueFormat = horizontal ? ctx.ntFormatX : ctx.ntFormatY;
     if (valueFormat) emit.y_axis.format = valueFormat;
@@ -25475,6 +25788,10 @@ var ntGroupedBarChartDef = {
       color: palette[i % palette.length]
     }));
     if (valCS.zero?.zero && bars2.every((b) => b.value >= 0)) emit.y_axis.min = 0;
+    const values = bars2.filter((b) => b.group).map((b) => b.value);
+    if (wantValueLabels(ctx.chartProperties, values, emit.y_axis.format, Math.floor(emit.width * values.length / bars2.length), horizontal)) {
+      emit.options = { ...emit.options, show_values: true };
+    }
     const facets = [cs.column, cs.row].filter(Boolean).map((f) => f.field);
     if (facets.length) {
       ctx.warn({
@@ -25848,7 +26165,7 @@ var ntRegressionDef = {
         const x = curve.from + (curve.to - curve.from) * i / (n - 1);
         return { x, y: curve.fit(x) };
       }).filter((p) => Number.isFinite(p.y) && (lo == null || p.y >= lo) && (hi == null || p.y <= hi));
-      curves.push({ name: `${g.name ? `${g.name} ` : ""}(trend)`, values, color: g.color ?? "#ee6666" });
+      curves.push({ name: g.name || "trend", values, color: g.color ?? "#ee6666", symbol: "\xB7" });
     }
     emit.data.series = [...curves, ...points];
     emit.options = { ...emit.options, show_legend: groups.length > 1 };
@@ -26037,7 +26354,9 @@ function assembleNtcharts(input) {
     ntFormatY,
     semanticTypes
   };
-  template.instantiate(emit, ctx);
+  const inks = themeInks(input.theme_spec, warn);
+  withThemeInks(inks, () => template.instantiate(emit, ctx));
+  terminalStyle(emit, input.chart_spec.chartProperties, inks);
   applyLogScale(emit, input.chart_spec.chartProperties, channelSemantics, warn);
   warnUnfittedX(emit, channelSemantics, warn);
   const result = { ...emit };
@@ -26139,6 +26458,47 @@ function axisFormat(cs, warn) {
     return { kind: "time", layout: d3TimeToGoLayout(cs.temporalFormat, warn) };
   }
   return formatSpecToNt(cs.format, warn);
+}
+function themeInks(themeSpec, warn) {
+  if (themeSpec == null) return void 0;
+  let spec;
+  try {
+    spec = resolveThemeSpec(themeSpec);
+  } catch {
+    spec = void 0;
+  }
+  const series = spec?.ink?.series;
+  if (!series) {
+    warn({ severity: "info", code: "theme-unknown", message: `theme ${JSON.stringify(themeSpec)} has no series inks the terminal can use` });
+    return void 0;
+  }
+  return {
+    categorical: series.categorical,
+    single: series.single,
+    sequential: series.sequential?.stops,
+    diverging: series.diverging?.stops
+  };
+}
+var SYMBOLS = ["\u2022", "\xD7", "+", "\u25CB", "\u25C6", "\u25A1", "\u25B3", "\u25C7"];
+function terminalStyle(emit, props, inks) {
+  const series = emit.data.series;
+  if (emit.type === "scatter") {
+    let k = 0;
+    if (series.length > 1) {
+      for (const s of series) if (!s.symbol) s.symbol = SYMBOLS[k++ % SYMBOLS.length];
+    }
+  }
+  const combo = emit.type === "bar" && series.some((s) => s.type === "line");
+  if (["line", "scatter", "timeseries", "ohlc"].includes(emit.type) || combo) emit.options = { ...emit.options, nice_ticks: true };
+  if ((emit.type === "line" || emit.type === "scatter") && emit.y_axis?.scale !== "log") {
+    const ys = series.flatMap((s) => (s.values ?? []).map((p) => p.y)).filter(Number.isFinite);
+    const lo = emit.y_axis?.min ?? Math.min(...ys), hi = emit.y_axis?.max ?? Math.max(...ys);
+    const margin = 0.05 * (hi - lo);
+    if (lo < -margin && hi > margin) emit.options = { ...emit.options, zero_line: true };
+  }
+  const legend = props?.legend;
+  if (legend === "top" || legend === "bottom" || legend === "none") emit.options = { ...emit.options, legend_position: legend };
+  if (inks?.single && series.length === 1 && !series[0].color && emit.type !== "heatmap") series[0].color = inks.single;
 }
 
 // src/compile.ts
