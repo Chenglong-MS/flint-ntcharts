@@ -4,7 +4,7 @@ import { makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { splitSeries } from "../series.js";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
-import { pinFittedYDomain } from "../domain.js";
+import { pinFittedYDomain, pinZeroBaseline } from "../domain.js";
 import { dateSlots } from "../cadence.js";
 
 // Columns the Y axis labels and line take from the plot's width.
@@ -38,7 +38,7 @@ export const ntLineChartDef: ChartTemplateDef = {
     emit.y_axis = { ...emit.y_axis, title: cs.y?.field };
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
 
     if (isCategorical(ctx)) {

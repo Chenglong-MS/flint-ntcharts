@@ -21,3 +21,15 @@ export function pinFittedYDomain(emit: any, cs: any, table: any[]): void {
     emit.y_axis.max = padded[1];
   }
 }
+
+// pinZeroBaseline makes the Y axis include zero, as flint's zero decision
+// asks: zero becomes the minimum when every value is at or above it, the
+// maximum when every value is at or below it, and a range that already
+// crosses zero is left to the data. Pinning the minimum at 0 whatever the
+// data would push negative values off the plot.
+export function pinZeroBaseline(emit: any, cs: any, table: any[]): void {
+  const field = cs.y?.field;
+  const ys = table.map((r: any) => Number(r[field])).filter(Number.isFinite);
+  if (!ys.length || ys.every((y: number) => y >= 0)) emit.y_axis.min = 0;
+  else if (ys.every((y: number) => y <= 0)) emit.y_axis.max = 0;
+}

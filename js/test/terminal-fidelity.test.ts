@@ -299,3 +299,15 @@ describe("dates on a line chart's X axis", () => {
     expect(formatTime(Date.UTC(2026, 2, 5), "%b %d, %Y")).toBe("Mar 05, 2026");
   });
 });
+
+describe("zero baselines", () => {
+  it("keep negative points on the plot when the axis includes zero", () => {
+    const rows = [{ x: 1, y: -3 }, { x: 2, y: 4 }];
+    for (const type of ["Scatter Plot", "Line Chart"]) {
+      const out = assembleNtcharts(chart(type, rows, { x: { field: "x" }, y: { field: "y" } }, { x: "Quantity", y: "Quantity" }));
+      expect(out.y_axis?.min, type).toBeUndefined();
+    }
+    const below = assembleNtcharts(chart("Scatter Plot", [{ x: 1, y: -3 }, { x: 2, y: -1 }], { x: { field: "x" }, y: { field: "y" } }, { x: "Quantity", y: "Quantity" }));
+    expect(below.y_axis?.max).toBe(0);
+  });
+});
