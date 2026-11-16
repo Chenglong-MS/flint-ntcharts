@@ -33,6 +33,16 @@ func Sanitize(option []byte) []byte {
 	themeRiverAsLines(o)
 	reshapeContinuousX(o)
 	unstackLines(o)
+	if ax := soleAxis(o["xAxis"]); ax != nil {
+		// go-analyze reads category labels as strings only.
+		if d, ok := ax["data"].([]any); ok {
+			for i, v := range d {
+				if f, ok := v.(float64); ok {
+					d[i] = toString(f)
+				}
+			}
+		}
+	}
 	if lg, ok := o["legend"].(map[string]any); ok {
 		sanitizeLegend(lg)
 	}

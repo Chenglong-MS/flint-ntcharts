@@ -101,3 +101,14 @@ func TestRenderRefusesPointsOnACategoryY(t *testing.T) {
 		t.Fatalf("err = %v, want ErrUnsupported", err)
 	}
 }
+
+func TestNumericCategoryLabelsBecomeStrings(t *testing.T) {
+	in := `{"xAxis":{"type":"category","data":[1,2.5]},"yAxis":{"type":"value"},"series":[{"type":"line","data":[3,4]}]}`
+	d := decode(t, Sanitize([]byte(in)))["xAxis"].(map[string]any)["data"].([]any)
+	if d[0] != "1" || d[1] != "2.5" {
+		t.Fatalf("labels = %v", d)
+	}
+	if _, err := Render([]byte(in), 320, 200); err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+}
