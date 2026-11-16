@@ -17,8 +17,9 @@ import (
 //     point's colour group) are cut, leaving the numbers go-analyze reads;
 //   - pie radius: an [inner, outer] pair becomes its outer radius, and a bare
 //     number becomes a string, as go-analyze expects;
-//   - legend: position "middle" becomes "center", and {name} entries become
-//     plain names;
+//   - legend: a horizontal row at the top (go-analyze would draw flint's
+//     right-hand column over the Y axis), position "middle" becomes
+//     "center", and {name} entries become plain names;
 //   - series on a value or time X axis are put on evenly spaced category
 //     slots (go-analyze reads no X), stacked lines are drawn at their stacked
 //     heights, and a themeRiver becomes one line per stream; see continuous.go;
@@ -63,6 +64,17 @@ func Sanitize(option []byte) []byte {
 }
 
 func sanitizeLegend(lg map[string]any) {
+	// go-analyze reads only a legend's left and top, so flint's vertical
+	// legend at the right edge (right: N) falls to the left edge, over the Y
+	// axis labels, and it reserves no room beside the plot. A horizontal row
+	// at the top, which go-analyze keeps clear of the plot and wraps, reads
+	// the same. A legend flint put at the bottom stays there.
+	if b, _ := lg["bottom"]; b == nil {
+		lg["orient"], lg["left"] = "horizontal", "center"
+		delete(lg, "top")
+		delete(lg, "right")
+		delete(lg, "align")
+	}
 	for _, k := range []string{"left", "right", "top", "bottom"} {
 		if v, ok := lg[k].(string); ok && v == "middle" {
 			lg[k] = "center"

@@ -134,3 +134,15 @@ func TestRenderRefusesAPathOnAContinuousX(t *testing.T) {
 		t.Fatalf("a line in X order must draw: %v", err)
 	}
 }
+
+func TestLegendBecomesATopRow(t *testing.T) {
+	in := `{"legend":{"orient":"vertical","right":10,"top":52,"align":"left","data":["a","b"]},"series":[]}`
+	lg := decode(t, Sanitize([]byte(in)))["legend"].(map[string]any)
+	if lg["orient"] != "horizontal" || lg["left"] != "center" || lg["top"] != nil || lg["right"] != nil {
+		t.Fatalf("legend = %v", lg)
+	}
+	bottom := `{"legend":{"bottom":0,"left":"center"},"series":[]}`
+	if lg := decode(t, Sanitize([]byte(bottom)))["legend"].(map[string]any); lg["orient"] != nil {
+		t.Fatalf("a bottom legend must stay as flint placed it: %v", lg)
+	}
+}

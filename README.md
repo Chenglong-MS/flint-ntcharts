@@ -172,7 +172,9 @@ spaced category slots, so on its own it drops the X of every line, scatter, dens
 regression chart. `raster.Sanitize` puts those series on 360 evenly spaced slots across the axis
 (flint's min/max when set): lines take their interpolated value at each slot, and scatter points
 their nearest free slot. It also draws stacked lines (flint's range area) at their stacked heights
-and a streamgraph (`themeRiver`) as one line per stream. A value Y axis that should include zero (ECharts'
+and a streamgraph (`themeRiver`) as one line per stream. Legends are drawn as a horizontal row at the top: go-analyze reads only a legend's
+`left` and `top`, so flint's right-hand legend would fall over the Y axis labels. A value Y axis
+that should include zero (ECharts'
 default when `scale` is unset or false) gets an explicit 0, since go-analyze fits its own range and
 could start a bar chart above its shortest bar. Points against a category Y axis (a ranged dot plot)
 and lines whose X goes back and forth (a connected scatter plot's path) cannot be drawn, so `Render`
