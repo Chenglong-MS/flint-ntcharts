@@ -20,6 +20,7 @@ const DECLINED: Record<string, string> = {
   "Bar Chart :: T×N(5) (25 pts)": "needs one quantitative axis",
   "Bar Chart :: N(5)×T (25 pts)": "needs one quantitative axis",
   "Stacked Bar Chart :: N(5)×N(5) +color(N,3) grid": "needs one quantitative axis",
+  "Grouped Bar Chart :: N(5)×N(5) +color(N,3) grid": "needs one quantitative axis",
   "Line Chart :: Q×O(5) (5 pts)": "measures along y",
   "Line Chart :: Q×O(12) +color(N,4) (48 pts)": "measures along y",
   "Line Chart :: Q×O(30) (30 pts)": "measures along y",
@@ -35,7 +36,9 @@ describe("upstream test-data corpus", () => {
     // Bubble Chart is registered but upstream has no test generator for it;
     // templates-group1.test.ts covers it by hand.
     expect([...types].sort()).toEqual(
-      ["Area Chart", "Bar Chart", "Calendar Heatmap", "Candlestick Chart", "Combo Chart", "Connected Scatter Plot", "ECDF Plot", "Heatmap", "Histogram", "Line Chart", "Lollipop Chart", "Scatter Plot", "Slope Chart", "Sparkline", "Stacked Bar Chart", "Strip Plot"],
+      ["Area Chart", "Bar Chart", "Calendar Heatmap", "Candlestick Chart", "Combo Chart", "Connected Scatter Plot", "Density Plot", "ECDF Plot",
+       "Grouped Bar Chart", "Heatmap", "Histogram", "Line Chart", "Lollipop Chart", "Pyramid Chart", "Range Area Chart", "Ranged Dot Plot",
+       "Regression", "Scatter Plot", "Slope Chart", "Sparkline", "Stacked Bar Chart", "Streamgraph", "Strip Plot"],
     );
     expect(corpus.length).toBeGreaterThan(50);
     // Every declined case is still in the corpus: a renamed upstream case

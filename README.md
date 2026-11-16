@@ -53,7 +53,7 @@ flint-chart:
 
 `cmd/flint-edit` (`go install …/cmd/flint-edit@latest`; also [in the browser](https://nimblemarkets.github.io/flint-ntcharts/); source in [`demo/`](demo/), `task site-serve` builds it locally; `task site-serve-dev` builds it with this tree's compiler instead of the one booba-shim ships, which is how to try raster charts in the browser before a booba-shim release carries them). In a terminal, `task demo` runs it and `task demo -- -example 8` starts on the raster chart is a split-pane playground: edit the
 JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
-(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, grouped bars as a raster chart, combo chart);
+(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, a pie chart as a raster chart, combo chart);
 `ctrl+1`‥`9` / `alt+1`‥`9` jump to one directly in terminals that deliver those chords. `flint-edit -example 8` starts on example 8. The lower-right corner shows which example is loaded and the kind of chart in the spec, e.g. `3/9 · Candlestick Chart`, with `(edited)` once the spec is changed. `ctrl+r` (or `alt+r`, in terminals that send Alt as Meta)
 flips the chart between the text and raster renderers, for the example on screen and without editing it; `ctrl+g` switches a
 raster chart between Kitty graphics and glyphs.
@@ -177,9 +177,9 @@ committed wasm matches a given `js/` checkout without rebuilding it:
 ```
 javy: javy 9.1.0
 flint-chart: 1.1.0
-bundle-sha256: 4a73227965cb64d7521b439b7171c731e73535c9f83ee276143fcee7bc5e215c
-bundle-bytes: 1090224
-wasm-sha256: 7f0656f0fe9d7f9c02d58cccd3830a13b1028ee2533aca857327a3e76fd86b2b
+bundle-sha256: 453f1eb02ff4ad5174119f009db6410d3177192028a9ff187159ebf9cdff15ee
+bundle-bytes: 1114316
+wasm-sha256: 6bca92631ba4f0ede16226f7da69f305d354f9a10c83db83dbfedd88967a517c
 ```
 
 (The values above are a snapshot; the committed file is authoritative.) The bundle is small
@@ -482,6 +482,14 @@ charts. Bumping it is a deliberate step: update the pin, run the suite, review w
 - Area Chart (drawn as a line chart; no fill, not stacked)
 - Lollipop Chart (drawn as a bar chart)
 - Calendar Heatmap (week columns by weekday rows, Monday first; values on a day are summed, or rows counted with no `color`)
+- Grouped Bar Chart (one coloured bar per group, an empty bar between categories; lanes follow flint's
+  `dodge` plan; a grouping with more than 10 values is combined, `too-many-groups`)
+- Pyramid Chart (two groups back to back on a symmetric axis; the sides are named in a `pyramid-sides` warning)
+- Density Plot (flint's Gaussian KDE and bandwidth, drawn as lines; `bandwidth` property)
+- Range Area Chart (each band drawn as its low and high edges in one colour)
+- Streamgraph (drawn as a line chart: each stream is its own line, not stacked)
+- Ranged Dot Plot (drawn as dots per category; the joining line is not shown)
+- Regression (flint's `linear`, `log`, `exp`, `pow`, `quad` and `poly` fits, drawn as a row of points beneath the data)
 
 Only **"Line Chart"** is a registered `chartType` name in the template registry
 (`js/src/ntcharts/templates/index.ts`) — there is no separate "Timeseries Line Chart" entry.
@@ -492,10 +500,9 @@ Only **"Line Chart"** is a registered `chartType` name in the template registry
 `line-numeric` fixture/golden under `testdata/fixtures-terminal/` and
 `testdata/ntspec-golden-terminal/`.
 
-**Grouped Bar Chart is intentionally unsupported.** ntcharts' terminal `barchart.Model` can only
-render stacked segments within a bar, not side-by-side groups, so a multi-series `Spec` with
-`options.stacked` unset is rejected by `spec.Build` rather than silently stacked. flint-chart's
-grouped-bar encodings have no terminal-renderable equivalent in this backend.
+**Grouped bars are laid out bar by bar.** ntcharts' terminal `barchart.Model` only stacks segments
+within a bar, so a Grouped Bar Chart emits one bar per group whose only non-zero segment is that
+group's, which the model draws as a single coloured bar. A category's name sits under its first bar.
 
 ### Cells sizing convention
 
@@ -635,6 +642,9 @@ left in place rather than stripped.
   far from zero sits in part of the width; an `info` warning, `x-axis-from-zero`, says how much.
 - **Line and scatter category names are cut by the renderer**, and a long first name next to the
   Y axis can be dropped (`Stage 1` … `Stage 12` reads `Sta`, `Stag`).
+- **No legend, title or axis titles are drawn.** ntcharts' `spec.Build` ignores `show_legend`, `title`
+  and axis titles, so colours are not named on screen. The Pyramid Chart names its two sides in a
+  warning for that reason.
 - **Raster cannot draw heatmaps**, so flint 1.1's count heatmap for a bar request on two
   categorical axes falls back to text.
 

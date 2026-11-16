@@ -11,6 +11,7 @@
  * Sparklines spread over the chart's width; several sparklines are drawn as one line chart (`chart-type-approximated`).
  * A numeric line chart whose data sits far from 0 says so (`x-axis-from-zero`): the terminal's line X axis always reaches 0.
  * **Behavior change:** some requests are declined with an error naming the fields instead of drawing an empty or merged chart: bars with no quantitative axis, a line chart whose y is not a measure, a scatter plot on two categorical axes, and a faceted candlestick chart.
+ * New chart types from flint 1.1: Grouped Bar Chart (bar by bar, following flint's dodge plan), Pyramid Chart, Density Plot (flint's KDE), Range Area Chart (both edges), Streamgraph and Ranged Dot Plot (approximated), and Regression (flint's six fit methods, the fit drawn as a row of points). Charts that are approximated say so in an `info` warning. Pie, donut, rose, radar, funnel, treemap, sunburst, sankey, network, tree, parallel coordinates, gauge, bullet, boxplot, violin, waterfall, Gantt, bump, KPI and map charts remain raster-only or unsupported.
  * Raster: fractional sizes in flint 1.1's ECharts options (font sizes in compact charts) are rounded, so those charts render instead of failing to parse.
 
 ## v0.3.1 (2026-10-10)

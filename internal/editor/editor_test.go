@@ -106,7 +106,7 @@ func TestExamplesCompile(t *testing.T) {
 	if len(examples) != 9 {
 		t.Fatalf("expected 9 examples, got %d", len(examples))
 	}
-	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Grouped Bars (raster)", "Combo Chart"} {
+	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Pie Chart (raster)", "Combo Chart"} {
 		if examples[i].name != want {
 			t.Fatalf("examples[%d].name = %q, want %q", i, examples[i].name, want)
 		}
@@ -351,7 +351,7 @@ func TestAltRIsAnAliasForCtrlR(t *testing.T) {
 	}
 }
 
-// Example 8 (grouped bars) is raster-only. Toggling to text must keep the image
+// Example 8 (a pie chart) is raster-only. Toggling to text must keep the image
 // on screen and say why, not blank the chart.
 func TestCtrlROnARasterOnlyChartKeepsTheImage(t *testing.T) {
 	m := sized(t)
@@ -405,7 +405,7 @@ func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
 
 	next, _ = m.Update(tea.KeyPressMsg{Code: '8', Mod: tea.ModAlt})
 	m = next.(model)
-	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "8/9 · Grouped Bar Chart") {
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "8/9 · Pie Chart") {
 		t.Fatalf("on the raster example the label is %q", last)
 	}
 }

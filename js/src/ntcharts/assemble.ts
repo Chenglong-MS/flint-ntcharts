@@ -82,7 +82,8 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
     if (next) template = next;
   }
   const composed = applyEncodingOverrides(template, pivoted.encodings, input.chart_spec.chartProperties);
-  const encodings = template.normalizeEncodings?.(composed, data) ?? composed;
+  // A third argument lets a terminal template say what it changed.
+  const encodings = (template.normalizeEncodings as any)?.(composed, data, warn) ?? composed;
   data = applyAggregationShim(encodings, data);
 
   // PHASE 0: semantics + zero.

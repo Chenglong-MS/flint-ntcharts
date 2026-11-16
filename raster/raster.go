@@ -1,7 +1,7 @@
 // Package raster draws ECharts options as images, using go-analyze/charts.
 //
 // flint's ECharts backend can describe far more chart types than the ntcharts
-// text renderer draws (grouped bars, pies, radars, ...). Render turns one of
+// text renderer draws (pies, radars, treemaps, ...). Render turns one of
 // those options into an image that picture.Model can show with Kitty graphics
 // or its glyph fallback.
 //

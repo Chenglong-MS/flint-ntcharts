@@ -3,6 +3,8 @@ import { assembleNtcharts } from "../src/ntcharts/index.js";
 import { compileToNtSpec } from "../src/compile.js";
 import { edgeLabels } from "../src/ntcharts/templates/histogram.js";
 import { resample } from "../src/ntcharts/templates/sparkline.js";
+import { kde } from "../src/ntcharts/templates/density.js";
+import { fitCurve } from "../src/ntcharts/templates/regression.js";
 import { barRoom, categoryLabels, fitBandLabels } from "../src/ntcharts/bands.js";
 
 // What the terminal draws must say what Flint's other backends say about the
@@ -201,5 +203,71 @@ describe("names under narrow bars", () => {
     const room = barRoom(out.width, out.x_axis!.labels!.length);
     for (const l of out.x_axis!.labels!) expect(l.length).toBeLessThanOrEqual(room);
     expect((out._warnings ?? []).find((w: any) => w.code === "labels-shortened")?.message).toContain("1 to 30");
+  });
+});
+
+describe("chart types added for flint 1.1", () => {
+  const sales = ["North", "South"].flatMap((r) => ["Online", "Store", "Phone"].map((c, i) => ({ r, c, v: 10 * (i + 1) + (r === "South" ? 5 : 0) })));
+
+  it("set grouped bars side by side: one coloured bar per group, an empty bar between categories", () => {
+    const out = assembleNtcharts(chart("Grouped Bar Chart", sales, { x: { field: "r" }, y: { field: "v" }, group: { field: "c" } }, { r: "Category", c: "Category", v: "Quantity" }));
+    expect(out.x_axis!.labels).toEqual(["North", "", "", "", "South", "", ""]);
+    expect(out.data.series.map((s) => s.name)).toEqual(["Online", "Store", "Phone"]);
+    expect(out.data.series[1].values!.map((p) => p.y)).toEqual([0, 20, 0, 0, 0, 25, 0]);
+    expect(new Set(out.data.series.map((s) => s.color)).size).toBe(3);
+  });
+
+  it("keep a lane for every group under a global dodge, and only a category's own under a local one", () => {
+    const sparse = sales.filter((r) => !(r.r === "North" && r.c === "Store"));
+    const draw = (dodge: string) => assembleNtcharts(chart("Grouped Bar Chart", sparse, { x: { field: "r" }, y: { field: "v" }, group: { field: "c" } },
+      { r: "Category", c: "Category", v: "Quantity" }, { chartProperties: { dodge } }));
+    expect(draw("global").x_axis!.labels).toHaveLength(7);
+    expect(draw("local").x_axis!.labels).toHaveLength(6);
+  });
+
+  it("combine a grouping with too many values to tell apart, and say so", () => {
+    const rows = Array.from({ length: 40 }, (_, i) => ({ c: ["a", "b"][i % 2], g: i, v: 1 }));
+    const out = assembleNtcharts(chart("Grouped Bar Chart", rows, { x: { field: "c" }, y: { field: "v" }, group: { field: "g" } }, { c: "Category", g: "Quantity", v: "Quantity" }));
+    expect(codes(out)).toContain("too-many-groups");
+    expect(out.data.series[0].values!.map((p) => p.y)).toEqual([20, 20]);
+  });
+
+  it("set a pyramid's two groups back to back on a symmetric axis, first category at the bottom", () => {
+    const rows = ["0-9", "10-19"].flatMap((a, i) => [{ a, s: "M", n: 10 + i }, { a, s: "F", n: 20 + i }]);
+    const out = assembleNtcharts(chart("Pyramid Chart", rows, { y: { field: "a" }, x: { field: "n" }, color: { field: "s" } }, { a: "Category", s: "Category", n: "Quantity" }));
+    expect(out.options?.orientation).toBe("horizontal");
+    expect(out.x_axis!.labels).toEqual(["10-19", "0-9"]);
+    expect(out.data.series[0].values!.map((p) => p.y)).toEqual([-11, -10]);
+    expect([out.y_axis!.min, out.y_axis!.max]).toEqual([-21, 21]);
+    expect((out._warnings ?? []).find((w: any) => w.code === "pyramid-sides")?.message).toBe("M runs left, F right");
+  });
+
+  it("estimate densities as flint does and label their small values", () => {
+    const curve = kde([0, 0, 0, 1, -1], 200, 1, { min: -10, max: 10 });
+    const area = curve.reduce((s, p, i) => (i ? s + ((p.y + curve[i - 1].y) / 2) * (p.x - curve[i - 1].x) : s), 0);
+    expect(area).toBeCloseTo(1, 2);
+    const out = assembleNtcharts(chart("Density Plot", Array.from({ length: 50 }, (_, i) => ({ v: 100 + i })), { x: { field: "v" } }, { v: "Quantity" }));
+    expect(out.y_axis?.format).toEqual({ kind: "number", precision: 3 });
+  });
+
+  it("draw a range area as its two edges in one colour, the axis fitted to both", () => {
+    const rows = [1, 2, 3].map((x) => ({ x, lo: 10 + x, hi: 20 + x }));
+    const out = assembleNtcharts(chart("Range Area Chart", rows, { x: { field: "x" }, y: { field: "lo" }, y2: { field: "hi" } }, { x: "Quantity", lo: "Quantity", hi: "Quantity" }));
+    expect(out.data.series.map((s) => s.values!.map((p) => p.y))).toEqual([[11, 12, 13], [21, 22, 23]]);
+    expect(out.data.series[0].color).toBe(out.data.series[1].color);
+    expect(out.y_axis!.min!).toBeLessThan(11);
+    expect(out.y_axis!.max!).toBeGreaterThan(23);
+  });
+
+  it("fit regressions by flint's methods and draw the fit beneath the points", () => {
+    const line = fitCurve([[0, 1], [1, 3], [2, 5]], "linear", 3)!;
+    expect(line.fit(10)).toBeCloseTo(21);
+    const exp = fitCurve([0, 1, 2, 3].map((x) => [x, 2 * Math.exp(0.5 * x)]), "exp", 3)!;
+    expect(exp.fit(4)).toBeCloseTo(2 * Math.exp(2));
+    const rows = Array.from({ length: 20 }, (_, i) => ({ x: i, y: 3 * i + (i % 3) }));
+    const out = assembleNtcharts(chart("Regression", rows, { x: { field: "x" }, y: { field: "y" } }, { x: "Quantity", y: "Quantity" }));
+    expect(out.data.series[0]).toMatchObject({ name: "(trend)", color: "#ee6666" });
+    expect(out.data.series[0].values!.length).toBe(out.width);
+    expect(out.data.series[1].values).toHaveLength(20);
   });
 });

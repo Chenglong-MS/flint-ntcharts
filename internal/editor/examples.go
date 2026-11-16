@@ -138,25 +138,19 @@ var examples = []example{
     "encodings": { "x": {"field": "day"}, "color": {"field": "commits"} }
   }
 }`},
-	{name: "Grouped Bars (raster)", src: `{
+	{name: "Pie Chart (raster)", src: `{
   "renderer": "raster",
   "data": { "values": [
-    {"device": "Laptop", "region": "USA",   "units": 410},
-    {"device": "Laptop", "region": "China", "units": 530},
-    {"device": "Laptop", "region": "Japan", "units": 250},
-    {"device": "Phone",  "region": "USA",   "units": 720},
-    {"device": "Phone",  "region": "China", "units": 910},
-    {"device": "Phone",  "region": "Japan", "units": 480},
-    {"device": "Tablet", "region": "USA",   "units": 190},
-    {"device": "Tablet", "region": "China", "units": 260},
-    {"device": "Tablet", "region": "Japan", "units": 330}
+    {"device": "Laptop", "units": 1190},
+    {"device": "Phone",  "units": 2110},
+    {"device": "Tablet", "units": 780},
+    {"device": "Watch",  "units": 420}
   ]},
   "chart_spec": {
-    "chartType": "Grouped Bar Chart",
+    "chartType": "Pie Chart",
     "encodings": {
-      "x": {"field": "device"},
-      "y": {"field": "units"},
-      "group": {"field": "region"}
+      "color": {"field": "device"},
+      "size": {"field": "units"}
     }
   }
 }`},
