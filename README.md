@@ -677,7 +677,7 @@ left in place rather than stripped.
   axis.
 - **Titles, legends and axis titles are drawn by `tui`, not ntcharts.** ntcharts' `spec.Build`
   ignores them; `tui.FramedView` draws them around the plot, and when the plot needs the rows it
-  gives up the X title, the Y title, the title and the legend in that order. A host that calls
+  gives up the room around the legend, then the X title, the Y title, the title and the legend in that order. With room, the legend sits right-aligned on its own row, a row clear of the plot. A host that calls
   `spec.Build` itself gets the plot alone.
 - **Raster cannot draw heatmaps**, so flint 1.1's count heatmap for a bar request on two
   categorical axes falls back to text.

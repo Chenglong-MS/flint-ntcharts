@@ -68,29 +68,40 @@ func FramedView(s spec.Spec, w, h int) (string, error) {
 		need = max(need, 2*n-1)
 	}
 
-	// Lay the chrome out, then give it up a piece at a time (the X title, the
-	// Y title, the title, the legend) until the plot has the rows it needs.
+	// Lay the chrome out, then give it up a piece at a time until the plot
+	// has the rows it needs: the room around the legend, the X title, the
+	// Y title, the title, the legend.
 	title := top
 	for drop := 0; ; drop++ {
+		roomy := drop < 1
 		top, bottom = nil, nil
-		if drop < 3 {
+		if drop < 4 {
 			top = append(top, title...)
 		}
 		upHere := up
-		if drop >= 2 {
+		if drop >= 3 {
 			upHere = ""
 		}
-		if drop < 4 {
-			if position == spec.LegendTop && len(legend) > 0 {
-				first := legend[0]
-				if upHere != "" && ansi.StringWidth(upHere)+2+ansi.StringWidth(first) <= w {
-					first = faint.Render(upHere) + strings.Repeat(" ", w-ansi.StringWidth(upHere)-ansi.StringWidth(first)) + first
+		if drop < 5 && len(legend) > 0 {
+			switch position {
+			case spec.LegendTop:
+				rows := rightAligned(legend, w)
+				if !roomy && upHere != "" && ansi.StringWidth(upHere)+2+ansi.StringWidth(legend[0]) <= w {
+					// Tight: the Y title shares the legend's first row.
+					rows[0] = faint.Render(upHere) + strings.Repeat(" ", w-ansi.StringWidth(upHere)-ansi.StringWidth(legend[0])) + legend[0]
 					upHere = ""
 				}
-				top = append(top, first)
-				top = append(top, legend[1:]...)
-			} else if position == spec.LegendBottom {
-				bottom = append(bottom, legend...)
+				top = append(top, rows...)
+				// Roomy: the legend keeps a row clear of the plot, which
+				// the Y title's row provides on the right.
+				if roomy && upHere == "" {
+					top = append(top, "")
+				}
+			case spec.LegendBottom:
+				if roomy {
+					bottom = append(bottom, "")
+				}
+				bottom = append(bottom, rightAligned(legend, w)...)
 			}
 		}
 		if upHere != "" {
@@ -98,10 +109,14 @@ func FramedView(s spec.Spec, w, h int) (string, error) {
 		}
 		// The X title only when the plot keeps most of the height.
 		plot := h - len(top) - len(bottom)
-		if drop < 1 && across != "" && s.Type != spec.ChartTypeSparkline && plot-1 >= 10 {
+		if drop < 2 && across != "" && s.Type != spec.ChartTypeSparkline && plot-1 >= 10 {
 			bottom = append([]string{strings.Repeat(" ", max(0, w-ansi.StringWidth(across))) + faint.Render(ansi.Truncate(across, w, "…"))}, bottom...)
 		}
-		if h-len(top)-len(bottom) >= need || drop >= 4 {
+		plot = h - len(top) - len(bottom)
+		if roomy && len(legend) > 0 && plot < max(need, 10) {
+			continue // room around the legend only beside a roomy plot
+		}
+		if plot >= need || drop >= 5 {
 			break
 		}
 	}
@@ -121,6 +136,16 @@ func FramedView(s spec.Spec, w, h int) (string, error) {
 	}
 	rows := append(append(top, v.View()), bottom...)
 	return strings.Join(rows, "\n"), nil
+}
+
+// rightAligned pads each row on the left to w columns, so the legend ends
+// where the plot does.
+func rightAligned(rows []string, w int) []string {
+	out := make([]string, len(rows))
+	for i, r := range rows {
+		out[i] = strings.Repeat(" ", max(0, w-ansi.StringWidth(r))) + r
+	}
+	return out
 }
 
 // legendRows lays the legend out in at most two rows of w columns; entries
@@ -173,7 +198,7 @@ func legendRows(s spec.Spec, w int) []string {
 	for i, e := range entries {
 		next := e
 		if row != "" {
-			next = row + "  " + e
+			next = row + "   " + e
 		}
 		if ansi.StringWidth(next) <= w {
 			row = next
@@ -184,10 +209,10 @@ func legendRows(s spec.Spec, w int) []string {
 		if len(rows) == 2 {
 			more := fmt.Sprintf("+%d", len(entries)-i)
 			last := rows[1]
-			for ansi.StringWidth(last)+2+len(more) > w && strings.Contains(last, "  ") {
-				last = last[:strings.LastIndex(last, "  ")]
+			for ansi.StringWidth(last)+3+len(more) > w && strings.Contains(last, "   ") {
+				last = last[:strings.LastIndex(last, "   ")]
 			}
-			rows[1] = last + "  " + more
+			rows[1] = last + "   " + more
 			return rows
 		}
 	}
@@ -240,7 +265,7 @@ func heatRamp(s spec.Spec, w int) string {
 	b.WriteString(label(lo) + " ")
 	for i := 0; i < cells; i++ {
 		t := float64(i) / float64(cells-1)
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(stops[int(math.Round(t*float64(len(stops)-1)))])).Render("█"))
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(stops[int(math.Round(t*float64(len(stops)-1)))])).Render("■"))
 	}
 	b.WriteString(" " + label(hi))
 	return b.String()

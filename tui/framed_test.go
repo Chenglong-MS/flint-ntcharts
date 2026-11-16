@@ -36,11 +36,23 @@ func TestFramedViewNamesTitleLegendAndAxes(t *testing.T) {
 	if lines[0] != "Units by device · 2026" {
 		t.Fatalf("title row = %q", lines[0])
 	}
-	if !strings.HasPrefix(lines[1], "units") || !strings.HasSuffix(lines[1], "■ USA  ■ China") {
-		t.Fatalf("Y title and legend row = %q", lines[1])
+	// With room, the legend ends where the plot does, on its own row, and
+	// the Y title's row keeps it clear of the plot.
+	if strings.TrimSpace(lines[1]) != "■ USA   ■ China" || ansi.StringWidth(lines[1]) != 40 {
+		t.Fatalf("legend row = %q", lines[1])
+	}
+	if strings.TrimSpace(lines[2]) != "units" {
+		t.Fatalf("Y title row = %q", lines[2])
 	}
 	if strings.TrimSpace(lines[15]) != "device" {
 		t.Fatalf("X title row = %q", lines[15])
+	}
+}
+
+func TestFramedViewSharesTheLegendRowWhenTight(t *testing.T) {
+	lines := framedLines(t, stackedBars(), 40, 12)
+	if !strings.HasPrefix(lines[1], "units") || !strings.HasSuffix(lines[1], "■ USA   ■ China") {
+		t.Fatalf("Y title and legend row = %q", lines[1])
 	}
 }
 
@@ -68,7 +80,11 @@ func TestFramedViewShowsAHeatmapRamp(t *testing.T) {
 	s := spec.Spec{Type: spec.ChartTypeHeatmap, Theme: spec.Theme{Gradient: []string{"#000000", "#ffffff"}},
 		XAxis: spec.XAxis{Labels: []string{"a", "b"}}, YAxis: spec.YAxis{Labels: []string{"r"}},
 		Heat: &spec.HeatData{Cells: []spec.HeatCell{{X: 0, Y: 0, Z: 12}, {X: 1, Y: 0, Z: 98}}}}
-	if first := framedLines(t, s, 40, 12)[0]; !strings.HasPrefix(first, "12 █") || !strings.HasSuffix(first, "█ 98") {
-		t.Fatalf("ramp row = %q", first)
+	lines := framedLines(t, s, 40, 12)
+	if ramp := strings.TrimSpace(lines[0]); !strings.HasPrefix(ramp, "12 ■") || !strings.HasSuffix(lines[0], "■ 98") {
+		t.Fatalf("ramp row = %q", lines[0])
+	}
+	if strings.TrimSpace(lines[1]) != "" {
+		t.Fatalf("the ramp must keep a row clear of the plot: %q", lines[1])
 	}
 }

@@ -56,7 +56,6 @@ type renderedMsg struct {
 	gen      int
 }
 
-
 // renderDoc compiles/builds raw into a chart view sized w×h (the chart area,
 // status line already excluded by the caller). Errors return err with view
 // empty; the model decides what stays on screen.
