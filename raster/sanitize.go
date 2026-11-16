@@ -88,7 +88,7 @@ func stackUnderTitle(title, lg map[string]any) {
 			line = math.Round(fs * 1.3)
 		}
 	}
-	lg["top"] = line + 8
+	lg["top"] = line + 12
 }
 
 func sanitizeLegend(lg map[string]any) {

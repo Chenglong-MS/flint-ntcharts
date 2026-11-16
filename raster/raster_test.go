@@ -3,6 +3,7 @@ package raster
 import (
 	"encoding/json"
 	"errors"
+	"github.com/go-analyze/charts"
 	"os"
 	"testing"
 )
@@ -198,8 +199,8 @@ func TestSanitizeStacksTheLegendUnderTheTitle(t *testing.T) {
 	if _, ok := title["top"]; ok {
 		t.Fatalf("title keeps its offset: %v", title)
 	}
-	if legend["top"] != 31.0 || legend["orient"] != "horizontal" {
-		t.Fatalf("legend = %v, want a row at top 31 (a title line and a gap)", legend)
+	if legend["top"] != 35.0 || legend["orient"] != "horizontal" {
+		t.Fatalf("legend = %v, want a row at top 35 (a title line and a gap)", legend)
 	}
 }
 
@@ -211,5 +212,21 @@ func TestSanitizeHidesALegendFlintDidNotAskFor(t *testing.T) {
 	}
 	if lg, _ := o["legend"].(map[string]any); lg["show"] != false {
 		t.Fatalf("legend = %v, want hidden", o["legend"])
+	}
+}
+
+func TestBreatheRoundsPinnedValueAxes(t *testing.T) {
+	lo, hi := 3062.0, 6088.0
+	opt := charts.ChartOption{YAxis: []charts.YAxisOption{{Min: &lo, Max: &hi}, {}}}
+	breathe(&opt)
+	pinned, free := opt.YAxis[0], opt.YAxis[1]
+	if *pinned.Min != 3000 || *pinned.Max != 7000 || pinned.LabelCount != 5 {
+		t.Fatalf("pinned axis = %v..%v with %d labels, want 3000..7000 every 1000", *pinned.Min, *pinned.Max, pinned.LabelCount)
+	}
+	if free.LabelCountAdjustment >= 0 {
+		t.Fatalf("a free axis should ask for fewer labels, got %d", free.LabelCountAdjustment)
+	}
+	if opt.Padding.Top == 0 || opt.Padding.Right <= opt.Padding.Left {
+		t.Fatalf("padding = %+v", opt.Padding)
 	}
 }

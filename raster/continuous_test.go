@@ -2,6 +2,7 @@ package raster
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -17,18 +18,29 @@ func TestContinuousX(t *testing.T) {
 			{"type":"line","data":[[5,1],[10,1]]}]}`
 		o := decode(t, Sanitize([]byte(in)))
 		a, b := seriesData(t, o, 0), seriesData(t, o, 1)
-		if len(a) != gridSlots || a[0] != 0.0 || a[gridSlots-1] != 10.0 {
-			t.Fatalf("first line: %d slots, ends %v %v", len(a), a[0], a[gridSlots-1])
+		n := len(a)
+		if n < gridSlots-10 || n > gridSlots || a[0] != 0.0 || a[n-1] != 10.0 {
+			t.Fatalf("first line: %d slots, ends %v %v", n, a[0], a[n-1])
 		}
-		if mid := a[gridSlots/2].(float64); mid < 4.9 || mid > 5.1 {
+		if mid := a[n/2].(float64); mid < 4.9 || mid > 5.1 {
 			t.Fatalf("midpoint = %v, want about 5", mid)
 		}
-		if b[0] != nil || b[gridSlots-1] != 1.0 {
-			t.Fatalf("a line starting at x=5 must leave the left half empty: %v … %v", b[0], b[gridSlots-1])
+		if b[0] != nil || b[n-1] != 1.0 {
+			t.Fatalf("a line starting at x=5 must leave the left half empty: %v … %v", b[0], b[n-1])
 		}
 		ax := o["xAxis"].(map[string]any)
-		if ax["type"] != "category" || len(ax["data"].([]any)) != gridSlots {
+		labels := ax["data"].([]any)
+		if ax["type"] != "category" || len(labels) != n {
 			t.Fatalf("xAxis = %v", ax["type"])
+		}
+		// go-analyze labels every (n-1)/(ticks-1)-th slot: each is a round value.
+		ticks := int(ax["splitNumber"].(float64))
+		var got []string
+		for k := 0; k < ticks; k++ {
+			got = append(got, labels[k*(n-1)/(ticks-1)].(string))
+		}
+		if strings.Join(got, " ") != "0 2 4 6 8 10" {
+			t.Fatalf("labelled slots read %q, want 0 2 4 6 8 10", got)
 		}
 	})
 	t.Run("scatter points sharing an X take neighbouring slots", func(t *testing.T) {

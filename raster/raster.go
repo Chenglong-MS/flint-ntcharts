@@ -131,11 +131,58 @@ func renderPNG(option []byte, w, h int) (buf []byte, err error) {
 	if opt.ValueFormatter == nil {
 		opt.ValueFormatter = formatValue
 	}
+	breathe(&opt)
 	p, err := charts.Render(opt, charts.DimensionsOptionFunc(w, h), charts.PNGOutputOptionFunc())
 	if err != nil {
 		return nil, fmt.Errorf("raster: render: %w", err)
 	}
 	return p.Bytes()
+}
+
+// breathe gives a chart room between its parts. go-analyze ignores flint's
+// grid margins and packs the plot to within a few pixels of the edges, with
+// a value label every 25 pixels or so; at 640×360 that reads as crowded. The
+// chart keeps a margin all round (more on the right, where the last X label
+// overhangs the plot) and its value axes ask for fewer, rounder labels.
+func breathe(opt *charts.ChartOption) {
+	opt.Padding = charts.NewBox(16, 16, 28, 14)
+	for i := range opt.YAxis {
+		a := &opt.YAxis[i]
+		if a.LabelCount != 0 || a.LabelCountAdjustment != 0 {
+			continue
+		}
+		// A range flint pinned (a fitted domain) is split evenly between
+		// its bounds, so labels read 3.06k, 3.57k, ...: round bounds and a
+		// label on each round step instead, as flint's own nice scales do.
+		if a.Min != nil && a.Max != nil && *a.Max > *a.Min {
+			lo, hi, step := niceBounds(*a.Min, *a.Max)
+			a.Min, a.Max = &lo, &hi
+			a.LabelCount = int(math.Round((hi-lo)/step)) + 1
+			no := false
+			a.PreferNiceIntervals = &no
+			continue
+		}
+		a.LabelCountAdjustment = -3
+	}
+	if x := &opt.XAxis; x.LabelCountAdjustment == 0 && len(opt.YAxis) > 0 && len(x.Labels) == 0 {
+		x.LabelCountAdjustment = -2 // a horizontal bar chart's value axis
+	}
+}
+
+// niceBounds widens lo..hi outward to multiples of a round step (1, 2 or 5
+// times a power of ten) that splits it into about five intervals, and
+// returns the step.
+func niceBounds(lo, hi float64) (float64, float64, float64) {
+	raw := (hi - lo) / 5
+	p := math.Pow(10, math.Floor(math.Log10(raw)))
+	step := 10 * p
+	for _, m := range []float64{1, 2, 5} {
+		if m*p >= raw {
+			step = m * p
+			break
+		}
+	}
+	return math.Floor(lo/step+1e-9) * step, math.Ceil(hi/step-1e-9) * step, step
 }
 
 // formatValue formats axis and data values: as go-analyze does (two

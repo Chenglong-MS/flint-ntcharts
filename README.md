@@ -169,9 +169,11 @@ so raster is opt-in and nothing selects it automatically.
 
 go-analyze reads only the first number of each data point and places every series on evenly
 spaced category slots, so on its own it drops the X of every line, scatter, density, ECDF and
-regression chart. `raster.Sanitize` puts those series on 360 evenly spaced slots across the axis
-(flint's min/max when set): lines take their interpolated value at each slot, and scatter points
-their nearest free slot. It also draws stacked lines (flint's range area) at their stacked heights
+regression chart. `raster.Sanitize` puts those series on up to 360 evenly spaced slots across the
+axis (flint's min/max when set, widened to round bounds on a numeric axis, with a slot on each round
+step so the X labels read `20 40 60`): lines take their interpolated value at each slot, and scatter
+points their nearest free slot. The image keeps a margin around the plot, and value axes carry a few
+round labels: a range flint pinned is widened to round bounds with a label on each step. It also draws stacked lines (flint's range area) at their stacked heights
 and a streamgraph (`themeRiver`) as one line per stream. Legends are drawn as a horizontal row at the top: go-analyze reads only a legend's
 `left` and `top`, so flint's right-hand legend would fall over the Y axis labels; under a title,
 the row sits a line below it (go-analyze would draw the title across it), and a chart flint gave no

@@ -66,15 +66,25 @@ func reshapeContinuousX(o map[string]any) {
 	if hi == lo {
 		lo, hi = lo-1, hi+1
 	}
-	at := func(i int) float64 { return lo + (hi-lo)*float64(i)/float64(gridSlots-1) }
-	slotOf := func(x float64) int { return int(math.Round((x - lo) / (hi - lo) * float64(gridSlots-1))) }
+	// A numeric axis spans round bounds, and the grid has a slot on each
+	// round step: go-analyze labels every (slots-1)/(ticks-1)-th slot, so
+	// with splitNumber = ticks the labels read 20 40 60, not 20.65 35.43.
+	slots, ticks := gridSlots, 0
+	if kind == "value" {
+		var step float64
+		lo, hi, step = niceBounds(lo, hi)
+		ticks = int(math.Round((hi-lo)/step)) + 1
+		slots = (gridSlots-1)/(ticks-1)*(ticks-1) + 1
+	}
+	at := func(i int) float64 { return lo + (hi-lo)*float64(i)/float64(slots-1) }
+	slotOf := func(x float64) int { return int(math.Round((x - lo) / (hi - lo) * float64(slots-1))) }
 
 	for i, s := range series {
 		if len(points[i]) == 0 {
 			continue
 		}
 		sm := s.(map[string]any)
-		grid := make([]any, gridSlots)
+		grid := make([]any, slots)
 		pts := points[i]
 		sort.SliceStable(pts, func(a, b int) bool { return pts[a].x < pts[b].x })
 		if sm["type"] == "line" {
@@ -98,7 +108,7 @@ func reshapeContinuousX(o map[string]any) {
 			for _, p := range pts {
 				s := slotOf(p.x)
 				for _, d := range []int{0, 1, -1, 2, -2, 3, -3} {
-					if j := s + d; j >= 0 && j < gridSlots && grid[j] == nil {
+					if j := s + d; j >= 0 && j < slots && grid[j] == nil {
 						grid[j] = p.y
 						break
 					}
@@ -108,19 +118,21 @@ func reshapeContinuousX(o map[string]any) {
 		sm["data"] = grid
 	}
 
-	labels := make([]any, gridSlots)
+	labels := make([]any, slots)
 	for g := range labels {
 		if kind == "time" {
 			labels[g] = timeLabel(at(g), hi-lo)
 		} else {
-			labels[g] = strconv.FormatFloat(at(g), 'g', 4, 64)
+			labels[g] = formatValue(at(g))
 		}
 	}
 	boundaryGap := false
 	ax["type"], ax["data"], ax["boundaryGap"] = "category", labels, boundaryGap
 	delete(ax, "min")
 	delete(ax, "max")
-	if _, ok := ax["splitNumber"]; !ok {
+	if ticks > 0 {
+		ax["splitNumber"] = float64(ticks)
+	} else if _, ok := ax["splitNumber"]; !ok {
 		ax["splitNumber"] = 6.0
 	}
 }
