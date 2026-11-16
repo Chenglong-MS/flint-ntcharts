@@ -186,9 +186,9 @@ committed wasm matches a given `js/` checkout without rebuilding it:
 ```
 javy: javy 9.1.0
 flint-chart: 1.1.0
-bundle-sha256: 453f1eb02ff4ad5174119f009db6410d3177192028a9ff187159ebf9cdff15ee
-bundle-bytes: 1114316
-wasm-sha256: 6bca92631ba4f0ede16226f7da69f305d354f9a10c83db83dbfedd88967a517c
+bundle-sha256: 7f7c4fc10b6b4acea6b4787776ef3c57bff5e871fb27d3a457de587195dd882a
+bundle-bytes: 1117574
+wasm-sha256: 30c98b6d22cd8d1b792547f47e5278000891d08222710f07c5643329b95621c1
 ```
 
 (The values above are a snapshot; the committed file is authoritative.) The bundle is small
@@ -649,6 +649,12 @@ left in place rather than stripped.
   Word categories keep the renderer's prefix (`Laptop` → `Lap`).
 - **A numeric line chart's X axis reaches 0.** The ntcharts line spec has no X range, so data
   far from zero sits in part of the width; an `info` warning, `x-axis-from-zero`, says how much.
+- **Time-axis labels sit on a fixed step.** ntcharts' time axis offers a label every 4 columns and
+  prints the date at that column, so with a coarse format a label such as `Feb` can sit up to three
+  columns past Feb 1. A line whose dates run at a regular cadence (years, quarters, months or a
+  fixed step) without gaps, with room for every label, is therefore drawn on date slots (a category
+  axis in flint's date format), each label under its point. Dense or irregular series keep the time
+  axis.
 - **Line and scatter category names are cut by the renderer**, and a long first name next to the
   Y axis can be dropped (`Stage 1` … `Stage 12` reads `Sta`, `Stag`).
 - **No legend, title or axis titles are drawn.** ntcharts' `spec.Build` ignores `show_legend`, `title`

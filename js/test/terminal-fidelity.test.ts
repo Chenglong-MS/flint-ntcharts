@@ -5,6 +5,7 @@ import { edgeLabels } from "../src/ntcharts/templates/histogram.js";
 import { resample } from "../src/ntcharts/templates/sparkline.js";
 import { kde } from "../src/ntcharts/templates/density.js";
 import { fitCurve } from "../src/ntcharts/templates/regression.js";
+import { formatTime, regularDates } from "../src/ntcharts/cadence.js";
 import { barRoom, categoryLabels, fitBandLabels } from "../src/ntcharts/bands.js";
 
 // What the terminal draws must say what Flint's other backends say about the
@@ -138,7 +139,7 @@ describe("sparklines and histograms", () => {
   });
 
   it("draw several sparklines as lines on one chart, not one series run together", () => {
-    const rows = ["a", "b"].flatMap((k) => [1, 2, 3].map((i) => ({ k, d: `2024-01-0${i}`, v: i })));
+    const rows = ["a", "b"].flatMap((k) => [1, 2, 5].map((i) => ({ k, d: `2024-01-0${i}`, v: i })));
     const out = assembleNtcharts(chart("Sparkline", rows, { x: { field: "d" }, y: { field: "v" }, color: { field: "k" } }, { k: "Category", d: "Date", v: "Quantity" }));
     expect(out.type).toBe("timeseries");
     expect(out.data.series).toHaveLength(2);
@@ -269,5 +270,32 @@ describe("chart types added for flint 1.1", () => {
     expect(out.data.series[0]).toMatchObject({ name: "(trend)", color: "#ee6666" });
     expect(out.data.series[0].values!.length).toBe(out.width);
     expect(out.data.series[1].values).toHaveLength(20);
+  });
+});
+
+describe("dates on a line chart's X axis", () => {
+  const months = ["2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01"].map((d, i) => ({ d, v: i + 1 }));
+  const draw = (rows: Record<string, unknown>[]) =>
+    assembleNtcharts(chart("Line Chart", rows, { x: { field: "d" }, y: { field: "v" } }, { d: "Date", v: "Quantity" }));
+
+  it("put a regular series on date slots, each label under its point", () => {
+    const out = draw(months);
+    expect(out.x_axis).toMatchObject({ type: "category", labels: ["Jan", "Feb", "Mar", "Apr"] });
+    expect(out.data.series[0].values!.map((p) => p.x)).toEqual(["Jan", "Feb", "Mar", "Apr"]);
+  });
+
+  it("keep a time axis for irregular dates, gaps or more points than labels fit", () => {
+    expect(draw([...months.slice(0, 3), { d: "2026-03-20", v: 9 }]).type).toBe("timeseries");
+    expect(draw(months.filter((_, i) => i !== 1)).type).toBe("timeseries");
+    const daily = Array.from({ length: 90 }, (_, i) => ({ d: new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10), v: i }));
+    expect(draw(daily).type).toBe("timeseries");
+  });
+
+  it("recognise yearly, monthly and fixed-step cadences", () => {
+    expect(regularDates(["2020-01-01", "2021-01-01", "2022-01-01"])).toHaveLength(3);
+    expect(regularDates(["2020-01-01", "2020-04-01", "2020-07-01"])).toHaveLength(3);
+    expect(regularDates(["2020-01-01", "2020-01-08", "2020-01-15"])).toHaveLength(3);
+    expect(regularDates(["2020-01-01", "2020-01-08", "2020-01-16"])).toBeUndefined();
+    expect(formatTime(Date.UTC(2026, 2, 5), "%b %d, %Y")).toBe("Mar 05, 2026");
   });
 });

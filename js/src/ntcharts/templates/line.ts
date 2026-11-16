@@ -5,6 +5,10 @@ import { splitSeries } from "../series.js";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
 import { pinFittedYDomain } from "../domain.js";
+import { dateSlots } from "../cadence.js";
+
+// Columns the Y axis labels and line take from the plot's width.
+const Y_LABEL_ROOM = 9;
 
 export const ntLineChartDef: ChartTemplateDef = {
   chart: "Line Chart",
@@ -12,7 +16,17 @@ export const ntLineChartDef: ChartTemplateDef = {
   channels: ["x", "y", "color", "group"],
   markCognitiveChannel: "position",
   instantiate: (_spec: any, rawCtx: any) => {
-    const ctx = rawCtx as NtInstantiateContext;
+    let ctx = rawCtx as NtInstantiateContext;
+    // Regular dates with room for every label are drawn on category slots, so
+    // each label sits under its point (see dateSlots).
+    const x0 = ctx.channelSemantics.x;
+    const slots = x0?.type === "temporal"
+      ? dateSlots(ctx.table.map((r) => r[x0.field]), x0.temporalFormat, ctx.emit.width - Y_LABEL_ROOM)
+      : undefined;
+    if (slots) {
+      const order = [...slots.keys()].sort((a, b) => toMs(a) - toMs(b));
+      ctx = { ...ctx, channelSemantics: { ...ctx.channelSemantics, x: { ...x0!, type: "ordinal", ordinalSortOrder: order } } };
+    }
     const { emit, channelSemantics: cs, table } = ctx;
     if (cs.y?.type !== "quantitative") {
       throw new Error(`A terminal ${ctx.chartType} measures along y; got y = ${cs.y ? `${cs.y.field} (${cs.y.type})` : "none"}. ` +
@@ -29,6 +43,10 @@ export const ntLineChartDef: ChartTemplateDef = {
 
     if (isCategorical(ctx)) {
       finishCategorical(ctx, categorySeries(ctx), true);
+      if (slots) {
+        emit.x_axis!.labels = emit.x_axis!.labels!.map((k) => slots.get(k) ?? k);
+        for (const s of emit.data.series) for (const p of s.values ?? []) p.x = slots.get(String(p.x)) ?? p.x;
+      }
       return;
     }
 
