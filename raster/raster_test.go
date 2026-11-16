@@ -171,3 +171,19 @@ func TestRenderRejectsDegenerateSizes(t *testing.T) {
 		t.Fatal("expected an error for a zero size")
 	}
 }
+
+func TestSmallAxisValuesStayDistinct(t *testing.T) {
+	seen := map[string]bool{}
+	for i := 0; i <= 6; i++ {
+		s := formatValue(0.002 * float64(i))
+		if seen[s] {
+			t.Fatalf("%v prints %q, as a smaller tick does", 0.002*float64(i), s)
+		}
+		seen[s] = true
+	}
+	for v, want := range map[float64]string{0.012: "0.012", -0.0085: "-0.0085", 0.25: "0.25", 1500: "1.5k", 12.345: "12.35"} {
+		if got := formatValue(v); got != want {
+			t.Errorf("formatValue(%v) = %q, want %q", v, got, want)
+		}
+	}
+}

@@ -18,6 +18,9 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"math"
+	"strconv"
+	"strings"
 
 	"github.com/go-analyze/charts"
 )
@@ -124,11 +127,26 @@ func renderPNG(option []byte, w, h int) (buf []byte, err error) {
 	if err := json.Unmarshal(option, &eo); err != nil {
 		return nil, fmt.Errorf("raster: parse ECharts option: %w", err)
 	}
-	p, err := charts.Render(eo.ToOption(), charts.DimensionsOptionFunc(w, h), charts.PNGOutputOptionFunc())
+	opt := eo.ToOption()
+	if opt.ValueFormatter == nil {
+		opt.ValueFormatter = formatValue
+	}
+	p, err := charts.Render(opt, charts.DimensionsOptionFunc(w, h), charts.PNGOutputOptionFunc())
 	if err != nil {
 		return nil, fmt.Errorf("raster: render: %w", err)
 	}
 	return p.Bytes()
+}
+
+// formatValue formats axis and data values: as go-analyze does (two
+// decimals, then k, M, ...) from 1 up, and with three significant digits
+// below 1, where two decimals would print 0.012, 0.010 and 0.008 all as 0.01.
+func formatValue(v float64) string {
+	if a := math.Abs(v); a == 0 || a >= 1 {
+		return charts.FormatValueHumanizeShort(v, 2, false)
+	}
+	s := strconv.FormatFloat(v, 'f', 2-int(math.Floor(math.Log10(math.Abs(v)))), 64)
+	return strings.TrimRight(strings.TrimRight(s, "0"), ".")
 }
 
 // saturatedShare is the fraction of (sampled) pixels with a saturated colour.
