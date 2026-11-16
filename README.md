@@ -53,8 +53,8 @@ flint-chart:
 
 `cmd/flint-edit` (`go install …/cmd/flint-edit@latest`; also [in the browser](https://nimblemarkets.github.io/flint-ntcharts/); source in [`demo/`](demo/), `task site-serve` builds it locally; `task site-serve-dev` builds it with this tree's compiler instead of the one booba-shim ships, which is how to try raster charts in the browser before a booba-shim release carries them). In a terminal, `task demo` runs it and `task demo -- -example 8` starts on the raster chart is a split-pane playground: edit the
 JSON on the left, watch the chart on the right. `ctrl+n` steps through the built-in examples
-(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, a pie chart as a raster chart, combo chart);
-`ctrl+1`‥`9` / `alt+1`‥`9` jump to one directly in terminals that deliver those chords. `flint-edit -example 8` starts on example 8. The lower-right corner shows which example is loaded and the kind of chart in the spec, e.g. `3/9 · Candlestick Chart`, with `(edited)` once the spec is changed. `ctrl+r` (or `alt+r`, in terminals that send Alt as Meta)
+(bar, time series, candlestick, log scale, heatmap, histogram, calendar heatmap, a pie chart as a raster chart, combo chart, grouped bars, pyramid, density plot, range area, regression);
+`ctrl+1`‥`9` / `alt+1`‥`9` jump to one directly in terminals that deliver those chords. `flint-edit -example 8` starts on example 8. The lower-right corner shows which example is loaded and the kind of chart in the spec, e.g. `3/14 · Candlestick Chart`, with `(edited)` once the spec is changed. `ctrl+r` (or `alt+r`, in terminals that send Alt as Meta)
 flips the chart between the text and raster renderers, for the example on screen and without editing it; `ctrl+g` switches a
 raster chart between Kitty graphics and glyphs.
 
@@ -150,7 +150,7 @@ show with `picture.Model`:
 res, err := runner.CompileResult(ctx, input, envelope.WithRenderer("raster"))
 // res.ECharts is the option; res.Spec is nil
 img, err := raster.Render(res.ECharts, 800, 500)
-if errors.Is(err, raster.ErrBlank) { /* go-analyze drew nothing: use the text renderer */ }
+if errors.Is(err, raster.ErrBlank) || errors.Is(err, raster.ErrUnsupported) { /* use the text renderer */ }
 ```
 
 In `flint-tui` and `flint-edit` (and any host using `tui.RenderFrame` and `tui.Pane`) the chart is shown with
@@ -166,6 +166,15 @@ of cases draw something, 15% come back blank (Heatmap, Boxplot and Waterfall alw
 fail. `Render` reports a blank chart as `ErrBlank` rather than returning an empty image. It cannot
 tell a chart that is drawn *wrong* (stacked bars drawn side by side, Gantt bars drawn as lines),
 so raster is opt-in and nothing selects it automatically.
+
+go-analyze reads only the first number of each data point and places every series on evenly
+spaced category slots, so on its own it drops the X of every line, scatter, density, ECDF and
+regression chart. `raster.Sanitize` puts those series on 360 evenly spaced slots across the axis
+(flint's min/max when set): lines take their interpolated value at each slot, and scatter points
+their nearest free slot. It also draws stacked lines (flint's range area) at their stacked heights
+and a streamgraph (`themeRiver`) as one line per stream. Points against a category Y axis (a
+ranged dot plot) cannot be placed, so `Render` returns `ErrUnsupported` and viewers fall back to
+text. go-analyze formats Y labels to two decimals, so small values (densities) read coarsely.
 
 ### Build provenance
 

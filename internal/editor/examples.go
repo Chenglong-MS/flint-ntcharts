@@ -10,7 +10,7 @@ type example struct {
 // examples is ordered: index 0 loads with key 1, and seeds the editor at
 // startup. Sources are compiled in (adapted from testdata/fixtures-terminal,
 // not embedded — the demo must not drift when test fixtures change) and must
-// compile warning-free; TestExamplesCompile enforces that.
+// compile with at most info notes; TestExamplesCompile enforces that.
 var examples = []example{
 	{name: "Bar Chart", src: `{
   "data": { "values": [
@@ -215,6 +215,870 @@ var examples = []example{
     },
     "chartProperties": {
       "lineField": "margin"
+    }
+  }
+}`},
+	{name: "Grouped Bars", src: `{
+  "data": {
+    "values": [
+      {
+        "device": "Laptop",
+        "region": "USA",
+        "units": 410
+      },
+      {
+        "device": "Laptop",
+        "region": "China",
+        "units": 530
+      },
+      {
+        "device": "Laptop",
+        "region": "Japan",
+        "units": 250
+      },
+      {
+        "device": "Phone",
+        "region": "USA",
+        "units": 720
+      },
+      {
+        "device": "Phone",
+        "region": "China",
+        "units": 910
+      },
+      {
+        "device": "Phone",
+        "region": "Japan",
+        "units": 480
+      },
+      {
+        "device": "Tablet",
+        "region": "USA",
+        "units": 190
+      },
+      {
+        "device": "Tablet",
+        "region": "China",
+        "units": 260
+      },
+      {
+        "device": "Tablet",
+        "region": "Japan",
+        "units": 330
+      },
+      {
+        "device": "Watch",
+        "region": "USA",
+        "units": 140
+      },
+      {
+        "device": "Watch",
+        "region": "China",
+        "units": 90
+      },
+      {
+        "device": "Watch",
+        "region": "Japan",
+        "units": 120
+      }
+    ]
+  },
+  "semantic_types": {
+    "units": {
+      "semanticType": "Count"
+    }
+  },
+  "chart_spec": {
+    "chartType": "Grouped Bar Chart",
+    "encodings": {
+      "x": {
+        "field": "device"
+      },
+      "y": {
+        "field": "units"
+      },
+      "group": {
+        "field": "region"
+      }
+    }
+  }
+}`},
+	{name: "Pyramid", src: `{
+  "data": {
+    "values": [
+      {
+        "age": "0-14",
+        "sex": "Male",
+        "millions": 31
+      },
+      {
+        "age": "0-14",
+        "sex": "Female",
+        "millions": 30
+      },
+      {
+        "age": "15-29",
+        "sex": "Male",
+        "millions": 33
+      },
+      {
+        "age": "15-29",
+        "sex": "Female",
+        "millions": 32
+      },
+      {
+        "age": "30-44",
+        "sex": "Male",
+        "millions": 32
+      },
+      {
+        "age": "30-44",
+        "sex": "Female",
+        "millions": 32
+      },
+      {
+        "age": "45-59",
+        "sex": "Male",
+        "millions": 30
+      },
+      {
+        "age": "45-59",
+        "sex": "Female",
+        "millions": 31
+      },
+      {
+        "age": "60-74",
+        "sex": "Male",
+        "millions": 22
+      },
+      {
+        "age": "60-74",
+        "sex": "Female",
+        "millions": 25
+      },
+      {
+        "age": "75+",
+        "sex": "Male",
+        "millions": 9
+      },
+      {
+        "age": "75+",
+        "sex": "Female",
+        "millions": 13
+      }
+    ]
+  },
+  "semantic_types": {
+    "millions": {
+      "semanticType": "Quantity"
+    }
+  },
+  "chart_spec": {
+    "chartType": "Pyramid Chart",
+    "encodings": {
+      "y": {
+        "field": "age"
+      },
+      "x": {
+        "field": "millions"
+      },
+      "color": {
+        "field": "sex"
+      }
+    }
+  }
+}`},
+	{name: "Density Plot", src: `{
+  "data": {
+    "values": [
+      {
+        "team": "Web",
+        "latency_ms": 210
+      },
+      {
+        "team": "Web",
+        "latency_ms": 240
+      },
+      {
+        "team": "Web",
+        "latency_ms": 211
+      },
+      {
+        "team": "Web",
+        "latency_ms": 207
+      },
+      {
+        "team": "Web",
+        "latency_ms": 183
+      },
+      {
+        "team": "Web",
+        "latency_ms": 211
+      },
+      {
+        "team": "Web",
+        "latency_ms": 264
+      },
+      {
+        "team": "Web",
+        "latency_ms": 237
+      },
+      {
+        "team": "Web",
+        "latency_ms": 261
+      },
+      {
+        "team": "Web",
+        "latency_ms": 230
+      },
+      {
+        "team": "Web",
+        "latency_ms": 236
+      },
+      {
+        "team": "Web",
+        "latency_ms": 227
+      },
+      {
+        "team": "Web",
+        "latency_ms": 153
+      },
+      {
+        "team": "Web",
+        "latency_ms": 254
+      },
+      {
+        "team": "Web",
+        "latency_ms": 240
+      },
+      {
+        "team": "Web",
+        "latency_ms": 240
+      },
+      {
+        "team": "Web",
+        "latency_ms": 152
+      },
+      {
+        "team": "Web",
+        "latency_ms": 150
+      },
+      {
+        "team": "Web",
+        "latency_ms": 184
+      },
+      {
+        "team": "Web",
+        "latency_ms": 201
+      },
+      {
+        "team": "Web",
+        "latency_ms": 232
+      },
+      {
+        "team": "Web",
+        "latency_ms": 218
+      },
+      {
+        "team": "Web",
+        "latency_ms": 241
+      },
+      {
+        "team": "Web",
+        "latency_ms": 194
+      },
+      {
+        "team": "Web",
+        "latency_ms": 232
+      },
+      {
+        "team": "Web",
+        "latency_ms": 236
+      },
+      {
+        "team": "Web",
+        "latency_ms": 194
+      },
+      {
+        "team": "Web",
+        "latency_ms": 289
+      },
+      {
+        "team": "Web",
+        "latency_ms": 242
+      },
+      {
+        "team": "Web",
+        "latency_ms": 268
+      },
+      {
+        "team": "Web",
+        "latency_ms": 195
+      },
+      {
+        "team": "Web",
+        "latency_ms": 190
+      },
+      {
+        "team": "Web",
+        "latency_ms": 206
+      },
+      {
+        "team": "Web",
+        "latency_ms": 216
+      },
+      {
+        "team": "Web",
+        "latency_ms": 245
+      },
+      {
+        "team": "Web",
+        "latency_ms": 230
+      },
+      {
+        "team": "Web",
+        "latency_ms": 202
+      },
+      {
+        "team": "Web",
+        "latency_ms": 182
+      },
+      {
+        "team": "Web",
+        "latency_ms": 199
+      },
+      {
+        "team": "Web",
+        "latency_ms": 269
+      },
+      {
+        "team": "Web",
+        "latency_ms": 188
+      },
+      {
+        "team": "Web",
+        "latency_ms": 230
+      },
+      {
+        "team": "Web",
+        "latency_ms": 237
+      },
+      {
+        "team": "Web",
+        "latency_ms": 160
+      },
+      {
+        "team": "Web",
+        "latency_ms": 222
+      },
+      {
+        "team": "Web",
+        "latency_ms": 272
+      },
+      {
+        "team": "Web",
+        "latency_ms": 139
+      },
+      {
+        "team": "Web",
+        "latency_ms": 207
+      },
+      {
+        "team": "Web",
+        "latency_ms": 216
+      },
+      {
+        "team": "Web",
+        "latency_ms": 187
+      },
+      {
+        "team": "Web",
+        "latency_ms": 240
+      },
+      {
+        "team": "Web",
+        "latency_ms": 218
+      },
+      {
+        "team": "Web",
+        "latency_ms": 161
+      },
+      {
+        "team": "Web",
+        "latency_ms": 253
+      },
+      {
+        "team": "Web",
+        "latency_ms": 247
+      },
+      {
+        "team": "Web",
+        "latency_ms": 258
+      },
+      {
+        "team": "Web",
+        "latency_ms": 278
+      },
+      {
+        "team": "Web",
+        "latency_ms": 234
+      },
+      {
+        "team": "Web",
+        "latency_ms": 225
+      },
+      {
+        "team": "Web",
+        "latency_ms": 168
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 347
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 273
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 283
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 234
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 252
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 278
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 387
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 188
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 223
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 324
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 397
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 345
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 196
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 159
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 331
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 266
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 243
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 369
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 376
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 319
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 325
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 336
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 406
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 347
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 341
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 343
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 216
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 387
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 367
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 342
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 192
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 272
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 361
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 201
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 299
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 371
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 231
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 407
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 343
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 301
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 329
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 349
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 317
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 379
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 270
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 285
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 373
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 312
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 257
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 367
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 398
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 283
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 227
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 302
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 301
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 292
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 394
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 248
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 386
+      },
+      {
+        "team": "Mobile",
+        "latency_ms": 234
+      }
+    ]
+  },
+  "semantic_types": {
+    "latency_ms": {
+      "semanticType": "Duration",
+      "unit": "ms"
+    }
+  },
+  "chart_spec": {
+    "chartType": "Density Plot",
+    "encodings": {
+      "x": {
+        "field": "latency_ms"
+      },
+      "color": {
+        "field": "team"
+      }
+    }
+  }
+}`},
+	{name: "Range Area", src: `{
+  "data": {
+    "values": [
+      {
+        "month": "Jan",
+        "low": 2,
+        "high": 8
+      },
+      {
+        "month": "Feb",
+        "low": 3,
+        "high": 10
+      },
+      {
+        "month": "Mar",
+        "low": 5,
+        "high": 13
+      },
+      {
+        "month": "Apr",
+        "low": 7,
+        "high": 16
+      },
+      {
+        "month": "May",
+        "low": 10,
+        "high": 20
+      },
+      {
+        "month": "Jun",
+        "low": 13,
+        "high": 23
+      },
+      {
+        "month": "Jul",
+        "low": 15,
+        "high": 26
+      },
+      {
+        "month": "Aug",
+        "low": 15,
+        "high": 26
+      },
+      {
+        "month": "Sep",
+        "low": 12,
+        "high": 22
+      },
+      {
+        "month": "Oct",
+        "low": 9,
+        "high": 16
+      },
+      {
+        "month": "Nov",
+        "low": 5,
+        "high": 11
+      },
+      {
+        "month": "Dec",
+        "low": 3,
+        "high": 8
+      }
+    ]
+  },
+  "semantic_types": {
+    "month": {
+      "semanticType": "Month"
+    },
+    "low": {
+      "semanticType": "Temperature",
+      "unit": "°C"
+    },
+    "high": {
+      "semanticType": "Temperature",
+      "unit": "°C"
+    }
+  },
+  "chart_spec": {
+    "chartType": "Range Area Chart",
+    "encodings": {
+      "x": {
+        "field": "month"
+      },
+      "y": {
+        "field": "low"
+      },
+      "y2": {
+        "field": "high"
+      }
+    }
+  }
+}`},
+	{name: "Regression", src: `{
+  "data": {
+    "values": [
+      {
+        "hours": 1,
+        "score": 36
+      },
+      {
+        "hours": 2,
+        "score": 50
+      },
+      {
+        "hours": 2,
+        "score": 53
+      },
+      {
+        "hours": 3,
+        "score": 57
+      },
+      {
+        "hours": 3,
+        "score": 54
+      },
+      {
+        "hours": 4,
+        "score": 58
+      },
+      {
+        "hours": 4,
+        "score": 58
+      },
+      {
+        "hours": 5,
+        "score": 66
+      },
+      {
+        "hours": 5,
+        "score": 61
+      },
+      {
+        "hours": 6,
+        "score": 70
+      },
+      {
+        "hours": 6,
+        "score": 71
+      },
+      {
+        "hours": 7,
+        "score": 74
+      },
+      {
+        "hours": 7,
+        "score": 78
+      },
+      {
+        "hours": 8,
+        "score": 82
+      },
+      {
+        "hours": 8,
+        "score": 91
+      },
+      {
+        "hours": 9,
+        "score": 86
+      },
+      {
+        "hours": 9,
+        "score": 82
+      },
+      {
+        "hours": 10,
+        "score": 88
+      }
+    ]
+  },
+  "semantic_types": {
+    "hours": {
+      "semanticType": "Duration",
+      "unit": "hours"
+    },
+    "score": {
+      "semanticType": "Score"
+    }
+  },
+  "chart_spec": {
+    "chartType": "Regression",
+    "encodings": {
+      "x": {
+        "field": "hours"
+      },
+      "y": {
+        "field": "score"
+      }
     }
   }
 }`},

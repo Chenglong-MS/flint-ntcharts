@@ -19,6 +19,9 @@ import (
 //     number becomes a string, as go-analyze expects;
 //   - legend: position "middle" becomes "center", and {name} entries become
 //     plain names;
+//   - series on a value or time X axis are put on evenly spaced category
+//     slots (go-analyze reads no X), stacked lines are drawn at their stacked
+//     heights, and a themeRiver becomes one line per stream; see continuous.go;
 //   - sizes go-analyze reads as whole numbers (font sizes, margins, symbol
 //     sizes): a fraction, as flint 1.1 emits for compact charts, is rounded.
 func Sanitize(option []byte) []byte {
@@ -27,6 +30,9 @@ func Sanitize(option []byte) []byte {
 		return option
 	}
 	roundWholeFields(o)
+	themeRiverAsLines(o)
+	reshapeContinuousX(o)
+	unstackLines(o)
 	if lg, ok := o["legend"].(map[string]any); ok {
 		sanitizeLegend(lg)
 	}
