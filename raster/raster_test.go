@@ -187,3 +187,29 @@ func TestSmallAxisValuesStayDistinct(t *testing.T) {
 		}
 	}
 }
+
+func TestSanitizeStacksTheLegendUnderTheTitle(t *testing.T) {
+	var o map[string]any
+	in := `{"title":{"text":"T","top":15,"textStyle":{"fontSize":18,"lineHeight":23}},"legend":{"right":10,"orient":"vertical"},"series":[]}`
+	if err := json.Unmarshal(Sanitize([]byte(in)), &o); err != nil {
+		t.Fatal(err)
+	}
+	title, legend := o["title"].(map[string]any), o["legend"].(map[string]any)
+	if _, ok := title["top"]; ok {
+		t.Fatalf("title keeps its offset: %v", title)
+	}
+	if legend["top"] != 31.0 || legend["orient"] != "horizontal" {
+		t.Fatalf("legend = %v, want a row at top 31 (a title line and a gap)", legend)
+	}
+}
+
+func TestSanitizeHidesALegendFlintDidNotAskFor(t *testing.T) {
+	var o map[string]any
+	in := `{"series":[{"type":"scatter","data":[[1,2]]},{"type":"line","name":"Trend","data":[[1,2]]}]}`
+	if err := json.Unmarshal(Sanitize([]byte(in)), &o); err != nil {
+		t.Fatal(err)
+	}
+	if lg, _ := o["legend"].(map[string]any); lg["show"] != false {
+		t.Fatalf("legend = %v, want hidden", o["legend"])
+	}
+}

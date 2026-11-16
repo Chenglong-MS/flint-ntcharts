@@ -48,6 +48,13 @@ func Sanitize(option []byte) []byte {
 	}
 	if lg, ok := o["legend"].(map[string]any); ok {
 		sanitizeLegend(lg)
+		if t, ok := o["title"].(map[string]any); ok && lg["bottom"] == nil {
+			stackUnderTitle(t, lg)
+		}
+	} else {
+		// ECharts draws no legend unless asked; go-analyze draws one from
+		// the series names, unnamed series included.
+		o["legend"] = map[string]any{"show": false}
 	}
 	series, _ := o["series"].([]any)
 	for _, s := range series {
@@ -61,6 +68,27 @@ func Sanitize(option []byte) []byte {
 		return option
 	}
 	return out
+}
+
+// stackUnderTitle puts a top legend a row below the title. go-analyze moves
+// a legend under the title only when it sees the two overlap, which it misses
+// for flint's numeric title offset: the legend stays at the edge and the
+// title is drawn across it. The title goes to the top edge and the legend
+// below it, a gap apart.
+func stackUnderTitle(title, lg map[string]any) {
+	if text, _ := title["text"].(string); text == "" {
+		return
+	}
+	delete(title, "top")
+	line := 23.0
+	if ts, ok := title["textStyle"].(map[string]any); ok {
+		if lh, ok := ts["lineHeight"].(float64); ok && lh > 0 {
+			line = lh
+		} else if fs, ok := ts["fontSize"].(float64); ok && fs > 0 {
+			line = math.Round(fs * 1.3)
+		}
+	}
+	lg["top"] = line + 8
 }
 
 func sanitizeLegend(lg map[string]any) {
