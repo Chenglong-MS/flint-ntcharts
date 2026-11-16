@@ -22,6 +22,8 @@ import (
 //   - series on a value or time X axis are put on evenly spaced category
 //     slots (go-analyze reads no X), stacked lines are drawn at their stacked
 //     heights, and a themeRiver becomes one line per stream; see continuous.go;
+//   - a value Y axis that should include zero (ECharts' default, which
+//     go-analyze ignores) is given min 0 (or max 0) when flint set no range;
 //   - sizes go-analyze reads as whole numbers (font sizes, margins, symbol
 //     sizes): a fraction, as flint 1.1 emits for compact charts, is rounded.
 func Sanitize(option []byte) []byte {
@@ -52,6 +54,7 @@ func Sanitize(option []byte) []byte {
 			sanitizeSeries(sm)
 		}
 	}
+	includeZero(o)
 	out, err := json.Marshal(o)
 	if err != nil {
 		return option

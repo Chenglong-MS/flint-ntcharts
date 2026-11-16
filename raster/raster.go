@@ -25,16 +25,20 @@ import (
 // ErrBlank is returned when the chart rendered without error but drew no data.
 var ErrBlank = errors.New("raster: chart rendered blank")
 
-// ErrUnsupported is returned for a chart go-analyze would draw wrongly, such
-// as points or lines against a category Y axis (a ranged dot plot), which it
-// would place by their index.
-var ErrUnsupported = errors.New("raster: go-analyze cannot draw points against a category Y axis")
+// ErrUnsupported is returned for a chart go-analyze would draw wrongly: points
+// or lines against a category Y axis (a ranged dot plot), which it would place
+// by their index, or a line whose X goes back and forth (a connected scatter
+// plot's path), which it can only draw over X slots.
+var ErrUnsupported = errors.New("raster: go-analyze cannot draw this chart's points")
 
 // Render draws the ECharts option (as flint emits it) at w×h pixels. It
 // returns [ErrBlank] when the chart's data drew nothing.
 func Render(option []byte, w, h int) (image.Image, error) {
 	if pointsOnCategoryY(option) {
-		return nil, ErrUnsupported
+		return nil, fmt.Errorf("%w: points against a category Y axis", ErrUnsupported)
+	}
+	if pathOnContinuousX(option) {
+		return nil, fmt.Errorf("%w: a path whose X goes back and forth", ErrUnsupported)
 	}
 	img, ink, err := render(Sanitize(option), w, h)
 	if err != nil {

@@ -112,3 +112,25 @@ func TestNumericCategoryLabelsBecomeStrings(t *testing.T) {
 		t.Fatalf("Render: %v", err)
 	}
 }
+
+func TestValueAxisIncludesZero(t *testing.T) {
+	in := `{"xAxis":{"type":"category","data":["a","b","c"]},"yAxis":{"type":"value","scale":false},"series":[{"type":"bar","data":[120,95,210]}]}`
+	if y := decode(t, Sanitize([]byte(in)))["yAxis"].(map[string]any); y["min"] != 0.0 {
+		t.Fatalf("yAxis.min = %v, want 0", y["min"])
+	}
+	fitted := `{"xAxis":{"type":"category","data":["a"]},"yAxis":{"type":"value","scale":true},"series":[{"type":"line","data":[120]}]}`
+	if y := decode(t, Sanitize([]byte(fitted)))["yAxis"].(map[string]any); y["min"] != nil {
+		t.Fatalf("a fitted axis (scale true) must keep its fit: min = %v", y["min"])
+	}
+}
+
+func TestRenderRefusesAPathOnAContinuousX(t *testing.T) {
+	path := `{"xAxis":{"type":"value"},"yAxis":{"type":"value"},"series":[{"type":"line","data":[[1,1],[3,2],[2,3]]}]}`
+	if _, err := Render([]byte(path), 320, 200); !errors.Is(err, ErrUnsupported) {
+		t.Fatalf("err = %v, want ErrUnsupported", err)
+	}
+	line := `{"xAxis":{"type":"value"},"yAxis":{"type":"value"},"series":[{"type":"line","data":[[1,1],[2,3],[3,2]]}]}`
+	if _, err := Render([]byte(line), 320, 200); err != nil {
+		t.Fatalf("a line in X order must draw: %v", err)
+	}
+}

@@ -331,6 +331,46 @@ func toString(v any) string {
 	return ""
 }
 
+// pathOnContinuousX reports a line whose X goes back and forth (a connected
+// scatter plot's path): go-analyze draws lines over X slots only, so it can
+// draw a path neither as given nor sorted by X.
+func pathOnContinuousX(option []byte) bool {
+	var o map[string]any
+	if json.Unmarshal(option, &o) != nil {
+		return false
+	}
+	ax := soleAxis(o["xAxis"])
+	if t, _ := ax["type"].(string); t != "value" && t != "time" {
+		return false
+	}
+	series, _ := o["series"].([]any)
+	for _, s := range series {
+		sm, ok := s.(map[string]any)
+		if !ok || sm["type"] != "line" {
+			continue
+		}
+		data, _ := sm["data"].([]any)
+		up, down := false, false
+		var prev *float64
+		for _, e := range data {
+			p, ok := xyOf(e)
+			if !ok {
+				continue
+			}
+			if prev != nil {
+				up = up || p.x > *prev
+				down = down || p.x < *prev
+			}
+			x := p.x
+			prev = &x
+		}
+		if up && down {
+			return true
+		}
+	}
+	return false
+}
+
 // pointsOnCategoryY reports a line or scatter series drawn against a category
 // Y axis, which go-analyze cannot place.
 func pointsOnCategoryY(option []byte) bool {
@@ -349,4 +389,66 @@ func pointsOnCategoryY(option []byte) bool {
 		}
 	}
 	return false
+}
+
+// includeZero gives a value Y axis the zero ECharts includes by default
+// (scale unset or false) when flint set no range of its own: go-analyze
+// ignores scale and fits the axis to the data, which can start a bar chart
+// above its shortest bar and drop it.
+func includeZero(o map[string]any) {
+	var axes []map[string]any
+	switch t := o["yAxis"].(type) {
+	case map[string]any:
+		axes = []map[string]any{t}
+	case []any:
+		for _, a := range t {
+			if m, ok := a.(map[string]any); ok {
+				axes = append(axes, m)
+			}
+		}
+	}
+	series, _ := o["series"].([]any)
+	for i, ax := range axes {
+		if t, _ := ax["type"].(string); t != "value" && t != "" {
+			continue
+		}
+		if s, _ := ax["scale"].(bool); s {
+			continue
+		}
+		if _, ok := ax["min"]; ok {
+			continue
+		}
+		if _, ok := ax["max"]; ok {
+			continue
+		}
+		lo, hi := math.Inf(1), math.Inf(-1)
+		for _, s := range series {
+			sm, ok := s.(map[string]any)
+			if !ok {
+				continue
+			}
+			if idx, _ := sm["yAxisIndex"].(float64); int(idx) != i {
+				continue
+			}
+			data, _ := sm["data"].([]any)
+			for _, e := range data {
+				v, ok := scalarOf(e)
+				if !ok {
+					if arr, isArr := e.([]any); isArr && len(arr) > 0 {
+						v, ok = arr[len(arr)-1].(float64)
+					}
+				}
+				if ok {
+					lo, hi = math.Min(lo, v), math.Max(hi, v)
+				}
+			}
+		}
+		switch {
+		case math.IsInf(lo, 1):
+		case lo >= 0:
+			ax["min"] = 0.0
+		case hi <= 0:
+			ax["max"] = 0.0
+		}
+	}
 }
