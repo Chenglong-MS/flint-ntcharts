@@ -279,6 +279,10 @@ and compiled/built accordingly:
 | `type` | a raw `ntcharts/v2/spec.Spec` document | re-sized to the current terminal and built directly |
 | `error` | an upstream compiler error envelope (`{"error":{"message"}}`) | the `message` is surfaced verbatim as the render error (status line), same as a compile-time failure from the `chart_spec` path |
 
+A `theme_spec` beside `chart_spec` (a Flint theme preset name, or a `ThemeSpec`) colours the
+series with the theme's categorical, single, sequential and diverging inks. Text and axis inks
+are left to the terminal; an unknown theme warns `theme-unknown`.
+
 Anything else (or invalid JSON) is a sniff error, surfaced on the status line without
 discarding whatever chart was on screen already (see below).
 
@@ -640,6 +644,13 @@ left in place rather than stripped.
     containing zero or negative values (flint would use a symlog scale; terminal charts have
     none).
   - `candleStyle` (`line` / `block`) on candlestick charts.
+  - `orientation` (`vertical` / `horizontal`) on bar charts. Without it, a bar chart whose
+    nominal names cannot fit under the bars turns horizontal when the rows allow, with an
+    `info` warning, `bars-horizontal`.
+  - `labelStride` (a whole number ≥ 1) names every n-th band of an ordered axis.
+  - `valueLabels` (`true` / `false`) prints each bar's value at its end. By default values
+    print when there are at most 16 bars and every value fits within its bar.
+  - `legend` (`top` / `bottom` / `none`) places the legend in the `tui` frame.
 - **Bar charts are truncated to what the terminal can draw.** The ntcharts bar model needs
   two cells per bar (the bar and its gap), so a chart `W` cells wide shows at most `W/2`
   categories (`H/2` for horizontal bars). Past that, flint's overflow handling keeps the
@@ -648,11 +659,14 @@ left in place rather than stripped.
 - **Some requests are declined rather than drawn misleadingly**, with an error naming the
   fields: a bar chart without a quantitative axis (use a Heatmap), a line chart whose y is not
   a measure, a scatter plot on two categorical axes, and a faceted candlestick chart.
-- **Narrow bars get shorter names.** The bar model cuts a name to its bar's width, which would
-  turn `2021-03` into `20` and `13` into `1`. Dates step down to shorter forms (`Mar` with `'21`
-  where the year changes, then month numbers, then year marks); a number that does not fit is
-  left out. When names are lost, an `info` warning, `labels-shortened`, gives the axis range.
-  Word categories keep the renderer's prefix (`Laptop` → `Lap`).
+- **Axis names are planned to fit.** A bar, histogram or category axis names only what fits,
+  in the fewest characters that still say where you are. Dates name a calendar period and the
+  larger period where it begins (`2026 Feb Mar`, `2020 Jul 2021 Jul`); ordered numbers fall on
+  round strides; clock hours fall every 1 to 12 hours. Names on a nominal axis are never skipped:
+  they are cut with an ellipsis (`Unit…`), with an `info` warning, `labels-shortened`.
+- **Value axes are nice.** Every measured axis, the right axis included, labels round values
+  and widens to whole strides, as flint's quantitative scales do. Each label sits on the nearest
+  row, so the gaps between labels can differ by a row.
 - **A numeric line chart's X axis reaches 0.** The ntcharts line spec has no X range, so data
   far from zero sits in part of the width; an `info` warning, `x-axis-from-zero`, says how much.
 - **Time-axis labels sit on a fixed step.** ntcharts' time axis offers a label every 4 columns and
@@ -661,11 +675,10 @@ left in place rather than stripped.
   fixed step) without gaps, with room for every label, is therefore drawn on date slots (a category
   axis in flint's date format), each label under its point. Dense or irregular series keep the time
   axis.
-- **Line and scatter category names are cut by the renderer**, and a long first name next to the
-  Y axis can be dropped (`Stage 1` … `Stage 12` reads `Sta`, `Stag`).
-- **No legend, title or axis titles are drawn.** ntcharts' `spec.Build` ignores `show_legend`, `title`
-  and axis titles, so colours are not named on screen. The Pyramid Chart names its two sides in a
-  warning for that reason.
+- **Titles, legends and axis titles are drawn by `tui`, not ntcharts.** ntcharts' `spec.Build`
+  ignores them; `tui.FramedView` draws them around the plot, and when the plot needs the rows it
+  gives up the X title, the Y title, the title and the legend in that order. A host that calls
+  `spec.Build` itself gets the plot alone.
 - **Raster cannot draw heatmaps**, so flint 1.1's count heatmap for a bar request on two
   categorical axes falls back to text.
 
