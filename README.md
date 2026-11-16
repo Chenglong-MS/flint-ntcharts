@@ -175,18 +175,19 @@ the sha256 of the resulting `compile/flint.wasm` itself — enough to check whet
 committed wasm matches a given `js/` checkout without rebuilding it:
 
 ```
-javy: javy 9.0.0
-flint-chart: 0.5.1
-bundle-sha256: 91f06b82bef1e6e460b4d038932ea60e2e15595be2b35b8e3dc9cebf0bcb8155
-bundle-bytes: 232951
-wasm-sha256: b25adf3271b6d60fe1b53d86df8e79e9f25692ada9e633683a9af9e794c57c2e
+javy: javy 9.1.0
+flint-chart: 1.1.0
+bundle-sha256: 4a73227965cb64d7521b439b7171c731e73535c9f83ee276143fcee7bc5e215c
+bundle-bytes: 1090224
+wasm-sha256: 7f0656f0fe9d7f9c02d58cccd3830a13b1028ee2533aca857327a3e76fd86b2b
 ```
 
 (The values above are a snapshot; the committed file is authoritative.) The bundle is small
 because everything imports from the `flint-chart/core` subpath rather than the package root —
 the root barrel drags in the Vega-Lite, ECharts, Plotly and Excel backends plus the theme
 presets, which quadruples the bundle (about 1 MB at 0.5.1) for code the terminal backend never
-calls.
+calls. (The bundle does carry flint's ECharts backend, `flint-chart/echarts`, for the raster
+renderer; at 1.1.0 that is most of its size.)
 
 `bundle-sha256` is also re-derived and checked in CI (see "Continuous Integration" below): the
 `Wasm provenance check` step rebuilds the esbuild bundle (but not the wasm module itself, no
@@ -358,7 +359,7 @@ right. Edit the watched JSON or resize the terminal to test the renderer.
 `y2_axis` configures the independent right axis; a series selects it with
 `"y_axis": "right"`. The render checks cover raw specs and envelopes at three
 terminal sizes, including a narrow 44×15 window, and reject right-axis series
-without `y2_axis`. These checks run against the published ntcharts v2.8.0
+without `y2_axis`. These checks run against the published ntcharts v2.9.0
 dependency; no local workspace is required.
 
 ### Combo Chart
@@ -387,9 +388,8 @@ The renderer draws the line over the bars.
 The initial terminal implementation supports vertical bars and linear axes.
 Facets and encoding-level aggregation are rejected; pre-aggregate input for
 reductions other than the default category sums. Rounded corners and log-scale
-requests produce warnings. Both Go modules pin the combo-capable ntcharts
-revision `v2.8.1-0.20261011222942-8a870be97d11`; no sibling checkout or local
-workspace override is required.
+requests produce warnings. Both Go modules require ntcharts v2.9.0; no sibling
+checkout or local workspace override is required.
 
 ```sh
 go run ./cmd/flint-edit -example 9
@@ -402,7 +402,7 @@ Flint's ECharts backend does not support Combo Chart yet, so selecting raster
 falls back to text with a warning. The native dual-axis examples above remain
 useful for testing the renderer independently of Flint.
 
-### Categorical line and scatter axes (local development)
+### Categorical line and scatter axes
 
 Line Chart and Scatter Plot now retain nominal/ordinal X values as string
 categories and emit ordered `x_axis.labels`. Numeric and temporal charts use
@@ -411,9 +411,7 @@ slots, breaks lines across missing categories, and allows repeated scatter
 observations. Explicit native labels define order; otherwise native specs derive
 it from shared X data or first appearance. Flint respects semantic category order.
 
-This work currently requires the sibling ntcharts checkout and the local
-`go.work` override above; it is newer than the pinned combo revision. The
-categorical builder returns `*spec.CategoricalModel`, which embeds
+The categorical builder (ntcharts v2.9.0) returns `*spec.CategoricalModel`, which embeds
 `linechart.Model` and redraws on resize. Numeric line/scatter return types are
 unchanged. Categorical X cannot be logarithmic; Y and right Y may be.
 
@@ -449,30 +447,38 @@ hands off to a per-chart-type template (`js/src/ntcharts/templates/`) that fills
 `NtSpec` fields (`type`, `data.series`, `x_axis`, `y_axis`, `heat`, `options`, `theme`).
 `chart_spec.title` and `chart_spec.subtitle` pass through to `NtSpec.title` / `subtitle`.
 
-The pinned `flint-chart` version is exact (`0.5.1` in `js/package.json`), not a caret range,
+The pinned `flint-chart` version is exact (`1.1.0` in `js/package.json`), not a caret range,
 because upstream behaviour moves between minors without a type change: 0.5.1 renamed the
 categorical scheme for name-like fields (`set2` → `tableau10`), introduced the `blueorange`
 diverging scheme, and changed overflow truncation from "top N by value" to "first N in sort
-order". Bumping it is a deliberate step: update the pin, run the suite, review what the
+order"; 1.1 gives `Number` measures no additivity (several rows on one category average
+rather than sum, `resolvePivotAggregate`), lays bars on dates out as bands the way its
+Chart.js backend does (`detectBandedAxisForceDiscrete`), draws a bar request on two
+categorical axes as a count heatmap, and emits fractional font sizes in compact ECharts
+charts. Bumping it is a deliberate step: update the pin, run the suite, review what the
 [upstream corpus](#running-the-typescript-test-suite) says changed, regenerate goldens, then
 `make wasm`.
 
 ### Supported chart types
 
-- Bar Chart
+- Bar Chart (one quantitative axis; dates and numbers along the other are laid out as bands, as
+  flint's Chart.js bars are; several rows on one bar combine by the measure's rule, and a facet
+  is merged into each bar, each with an `info` warning)
 - Stacked Bar Chart
-- Line Chart
-- Scatter Plot
+- Line Chart (the measure along y)
+- Scatter Plot (a categorical y beside a measured x is drawn transposed, `axes-transposed`;
+  dates along x are drawn on a time axis)
 - Slope Chart (two categorical periods; endpoint value labels omitted)
 - Strip Plot (aligned points; jitter omitted)
 - Heatmap
-- Candlestick Chart
+- Candlestick Chart (one instrument; a faceted request is declined)
 - Combo Chart (categorical bars plus a right-axis line)
-- Sparkline
+- Sparkline (one series, spread over the width; several series are drawn as a line chart)
 - ECDF Plot (cumulative line; steps are drawn as a smooth rise)
 - Connected Scatter Plot (points joined in `order` channel order)
 - Bubble Chart (drawn as a scatter plot; the size channel is not shown)
-- Histogram (bins the measure; `binCount` property, default 10, limited to what the width fits)
+- Histogram (bins the measure; `binCount` property, default 10, limited to what the width fits;
+  bars are named by where their bin starts)
 - Area Chart (drawn as a line chart; no fill, not stacked)
 - Lollipop Chart (drawn as a bar chart)
 - Calendar Heatmap (week columns by weekday rows, Monday first; values on a day are summed, or rows counted with no `color`)
@@ -544,7 +550,8 @@ cd js && npx vitest run
 Beyond the hand-written fixtures under `testdata/`, `js/test/corpus.test.ts` pushes every
 case in flint-chart's own test corpus (`flint-chart/test-data`) for each registered chart
 type through `compileToNtSpec`, at pixel scale and at the 64x20 terminal default, and
-requires a well-formed envelope with no error and no duplicated warning. It is the
+requires a well-formed envelope with no error and no duplicated warning, except the cases
+listed in `DECLINED`, which must fail with their stated reason. It is the
 "semantic re-vendor guard": an upstream change that breaks a case fails here, before the
 wasm rebuild. `js/test/colormap.test.ts` likewise drives flint's colour-scheme recommender
 across the whole semantic-type registry and fails on any scheme name `colormap.ts` doesn't
@@ -600,7 +607,8 @@ left in place rather than stripped.
   - `includeZero_y` (`true`/`false`) on line, time-series and scatter charts overrides
     flint's zero-baseline decision; `false` fits the Y axis to the data with 5% padding.
   - `includeZero_y` on a bar chart, and `includeZero_x` anywhere, cannot be honoured (the
-    terminal bar model always draws from zero; the X range always follows the data) and
+    terminal bar model always draws from zero; a line chart's numeric X range always reaches 0
+    and a scatter plot's follows the data) and
     produce an `info` warning, `chart-property-unsupported`.
   - `logScale_x` / `logScale_y` (`true`) emit `scale: "log"` on the axis: Y on line, scatter,
     time-series and candlestick charts, X on numeric line and scatter charts. A log axis has
@@ -615,6 +623,20 @@ left in place rather than stripped.
   categories (`H/2` for horizontal bars). Past that, flint's overflow handling keeps the
   first categories in sort order and the envelope carries one `overflow` warning naming how
   many were omitted.
+- **Some requests are declined rather than drawn misleadingly**, with an error naming the
+  fields: a bar chart without a quantitative axis (use a Heatmap), a line chart whose y is not
+  a measure, a scatter plot on two categorical axes, and a faceted candlestick chart.
+- **Narrow bars get shorter names.** The bar model cuts a name to its bar's width, which would
+  turn `2021-03` into `20` and `13` into `1`. Dates step down to shorter forms (`Mar` with `'21`
+  where the year changes, then month numbers, then year marks); a number that does not fit is
+  left out. When names are lost, an `info` warning, `labels-shortened`, gives the axis range.
+  Word categories keep the renderer's prefix (`Laptop` → `Lap`).
+- **A numeric line chart's X axis reaches 0.** The ntcharts line spec has no X range, so data
+  far from zero sits in part of the width; an `info` warning, `x-axis-from-zero`, says how much.
+- **Line and scatter category names are cut by the renderer**, and a long first name next to the
+  Y axis can be dropped (`Stage 1` … `Stage 12` reads `Sta`, `Stag`).
+- **Raster cannot draw heatmaps**, so flint 1.1's count heatmap for a bar request on two
+  categorical axes falls back to text.
 
 ## License
 

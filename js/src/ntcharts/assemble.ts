@@ -145,6 +145,7 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
   };
   template.instantiate(emit as any, ctx as any);
   applyLogScale(emit, input.chart_spec.chartProperties, channelSemantics, warn);
+  warnUnfittedX(emit, channelSemantics, warn);
 
   const result: NtSpecOut = { ...emit };
   if (warnings.length) result._warnings = warnings;
@@ -260,6 +261,28 @@ function logScaleBlocker(emit: NtSpec, axis: "x" | "y"): string | undefined {
     return "the data has zero or negative values (flint would use a symlog scale, which terminal charts do not have)";
   }
   return undefined;
+}
+
+// Share of a numeric X axis the data may leave empty before the chart says so.
+const UNFITTED_X_SHARE = 0.4;
+
+// warnUnfittedX says when a numeric X axis reaches far past the data. An
+// ntcharts line chart's numeric X range always takes in 0 (its spec has no X
+// min/max; scatter plots fit X to their points), so data far from zero sits in
+// part of the width where flint would fit the axis to it.
+function warnUnfittedX(emit: NtSpec, channelSemantics: Record<string, ChannelSemantics>, warn: (w: ChartWarning) => void): void {
+  if (emit.type !== "line" || emit.x_axis?.type !== "value" || emit.x_axis.scale === "log") return;
+  const xs = emit.data.series.flatMap((s) => (s.values ?? []).map((p) => p.x)).filter((x): x is number => typeof x === "number" && Number.isFinite(x));
+  if (!xs.length) return;
+  const lo = Math.min(...xs), hi = Math.max(...xs);
+  const cs = Object.values(channelSemantics).find((c) => c?.field === emit.x_axis?.title);
+  if (cs?.zero?.zero) return;
+  const drawn = Math.max(1, hi) - Math.min(0, lo);
+  if (drawn > 0 && 1 - (hi - lo) / drawn > UNFITTED_X_SHARE) {
+    warn({ severity: "info", code: "x-axis-from-zero",
+      message: `the terminal's numeric X axis starts at 0, so ${emit.x_axis.title ?? "the data"} (${+lo.toPrecision(3)}–${+hi.toPrecision(3)}) fills ${Math.round(100 * (hi - lo) / drawn)}% of its width`,
+      channel: "x", field: cs?.field } as ChartWarning);
+  }
 }
 
 function axisFormat(cs: ChannelSemantics | undefined, warn: (w: ChartWarning) => void): NtFormat | undefined {

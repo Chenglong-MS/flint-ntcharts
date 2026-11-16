@@ -3,6 +3,7 @@ package raster
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -17,12 +18,15 @@ import (
 //   - pie radius: an [inner, outer] pair becomes its outer radius, and a bare
 //     number becomes a string, as go-analyze expects;
 //   - legend: position "middle" becomes "center", and {name} entries become
-//     plain names.
+//     plain names;
+//   - sizes go-analyze reads as whole numbers (font sizes, margins, symbol
+//     sizes): a fraction, as flint 1.1 emits for compact charts, is rounded.
 func Sanitize(option []byte) []byte {
 	var o map[string]any
 	if json.Unmarshal(option, &o) != nil {
 		return option
 	}
+	roundWholeFields(o)
 	if lg, ok := o["legend"].(map[string]any); ok {
 		sanitizeLegend(lg)
 	}
@@ -104,4 +108,32 @@ func parseDate(s string) (float64, bool) {
 		}
 	}
 	return 0, false
+}
+
+// wholeFields are the option keys go-analyze decodes into ints.
+var wholeFields = map[string]bool{
+	"fontSize": true, "splitNumber": true, "symbolSize": true, "distance": true, "yAxisIndex": true,
+	"top": true, "bottom": true, "left": true, "right": true, "width": true, "height": true,
+}
+
+// roundWholeFields rounds fractional numbers under wholeFields keys anywhere
+// in the option, leaving series data alone.
+func roundWholeFields(v any) {
+	switch t := v.(type) {
+	case map[string]any:
+		for k, e := range t {
+			if k == "data" {
+				continue
+			}
+			if f, ok := e.(float64); ok && wholeFields[k] {
+				t[k] = math.Round(f)
+				continue
+			}
+			roundWholeFields(e)
+		}
+	case []any:
+		for _, e := range t {
+			roundWholeFields(e)
+		}
+	}
 }

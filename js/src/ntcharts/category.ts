@@ -1,6 +1,34 @@
 import { splitSeries } from "./series.js";
+import { paletteForScheme } from "./colormap.js";
 import type { NtInstantiateContext } from "./assemble.js";
 import type { NtSeries } from "./types.js";
+
+const discrete = (t: string | undefined) => t === "nominal" || t === "ordinal";
+
+/**
+ * The axes as a terminal plot can draw them. ntcharts measures along y only: a
+ * categorical y beside a measured x is drawn transposed (the categories along
+ * x), and said so; two categorical axes cannot be drawn at all.
+ */
+export function orientMeasure(ctx: NtInstantiateContext): NtInstantiateContext {
+  const cs = ctx.channelSemantics;
+  const shown = () => (["x", "y"] as const).map((a) => cs[a] ? `${a} = ${cs[a].field} (${cs[a].type})` : `${a} = none`).join(", ");
+  if (!cs.x || !cs.y) throw new Error(`A terminal ${ctx.chartType} needs both x and y; got ${shown()}.`);
+  if (discrete(cs.x.type) && discrete(cs.y.type)) {
+    throw new Error(`A terminal ${ctx.chartType} needs a measured axis; got ${shown()}. Use a Heatmap for two categorical axes.`);
+  }
+  if (cs.y.type === "quantitative") return ctx;
+  ctx.warn({ severity: "info", code: "axes-transposed",
+    message: `drawn transposed: ${cs.y.field} along x and ${cs.x.field} up y, as the terminal measures along y only`,
+    channel: "y", field: cs.y.field } as any);
+  return {
+    ...ctx,
+    channelSemantics: { ...cs, x: cs.y, y: cs.x },
+    encodings: { ...ctx.encodings, x: ctx.encodings.y, y: ctx.encodings.x },
+    ntFormatX: ctx.ntFormatY,
+    ntFormatY: ctx.ntFormatX,
+  };
+}
 
 export function isCategorical(ctx: NtInstantiateContext): boolean {
   return ["nominal", "ordinal"].includes(ctx.channelSemantics.x?.type);
@@ -57,6 +85,9 @@ export function categorySeries(ctx: NtInstantiateContext): NtSeries[] {
   }
   ctx.warn({severity: "info", code: "facets-flattened",
     message: "terminal categorical chart draws facets as separate series on one plot"});
-  return [...buckets].flatMap(([key, rows]) => splitSeries(rows, semantics, point)
+  const flat = [...buckets].flatMap(([key, rows]) => splitSeries(rows, semantics, point)
     .map(s => ({ ...s, name: `${JSON.parse(key).map(String).join(" / ")}: ${s.name}` })));
+  // Series that the colour channel did not tell apart are told apart by facet.
+  const palette = paletteForScheme(undefined);
+  return flat.map((s, i) => (flat.length > 1 && !s.color ? { ...s, color: palette[i % palette.length] } : s));
 }

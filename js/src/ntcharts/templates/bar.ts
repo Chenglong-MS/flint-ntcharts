@@ -1,7 +1,10 @@
 import type { ChartTemplateDef } from "flint-chart/core";
-import { detectBandedAxisFromSemantics, makeCartesianPivot, makeSortAction } from "flint-chart/core";
-import { splitSeries } from "../series.js";
+import { detectBandedAxisForceDiscrete, makeCartesianPivot, makeSortAction } from "flint-chart/core";
+import { paletteForScheme } from "../colormap.js";
+import { barRoom, categoryKey, categoryLabels, categoryOrder, combine, combineOp, fitBandLabels } from "../bands.js";
 import type { NtInstantiateContext } from "../assemble.js";
+
+type Row = Record<string, unknown>;
 
 export const ntBarChartDef: ChartTemplateDef = {
   chart: "Bar Chart",
@@ -9,56 +12,103 @@ export const ntBarChartDef: ChartTemplateDef = {
   channels: ["x", "y", "color", "group"],
   markCognitiveChannel: "length",
   declareLayoutMode: (cs, table) => {
-    const result = detectBandedAxisFromSemantics(cs, table, { preferAxis: "x" });
+    // Terminal bars are always bands, as Flint's Chart.js bars are: a date or
+    // number axis is laid out as categories, so flint budgets and truncates it
+    // (with its usual overflow warning) rather than handing the renderer more
+    // bars than it has cells for.
+    const result = detectBandedAxisForceDiscrete(cs, table, { preferAxis: "x" });
     return {
       axisFlags: result ? { [result.axis]: { banded: true } } : { x: { banded: true } },
       resolvedTypes: result?.resolvedTypes,
       // The ntcharts bar model spends two cells per category — the bar and
       // the gap after it — and draws nothing at all once the bar width
-      // reaches zero. A 2-cell step makes flint budget, and truncate with its
-      // usual overflow warning, to what the renderer can actually draw.
+      // reaches zero. A 2-cell step makes flint budget to what it can draw.
       paramOverrides: { minStep: 2 },
     };
   },
   instantiate: (_spec: any, rawCtx: any) => {
     const ctx = rawCtx as NtInstantiateContext;
-    const { emit, channelSemantics: cs, table } = ctx;
-    // Orientation: banded/nominal axis on y ⇒ horizontal bars.
-    const horizontal = cs.y != null && cs.y.type !== "quantitative" && cs.x?.type === "quantitative";
-    const catCS = horizontal ? cs.y! : cs.x!;
-    const valCS = horizontal ? cs.x! : cs.y!;
+    const { emit, channelSemantics: cs, table, encodings } = ctx;
+    // The measured axis is the quantitative one; with both quantitative, y.
+    const horizontal = cs.x?.type === "quantitative" && cs.y != null && cs.y.type !== "quantitative";
+    const catAxis = horizontal ? "y" : "x";
+    const valAxis = horizontal ? "x" : "y";
+    const catCS = cs[catAxis];
+    const valCS = cs[valAxis];
+    if (!catCS || !valCS || valCS.type !== "quantitative") {
+      const shown = (["x", "y"] as const).map((a) => cs[a] ? `${a} = ${cs[a].field} (${cs[a].type})` : `${a} = none`).join(", ");
+      throw new Error(`A terminal ${ctx.chartType} needs one quantitative axis to measure; got ${shown}. ` +
+        `Use a Heatmap for two categorical axes.`);
+    }
+
+    // A facet becomes one more dimension the single terminal plot cannot show:
+    // its rows are combined into each bar, and the chart says so.
+    const facets = [cs.column, cs.row].filter(Boolean).map((f) => f!.field);
+    const groupCS = cs.color?.type === "quantitative" ? undefined : (cs.color ?? cs.group);
+    const op = combineOp(valCS, encodings[valAxis]?.aggregate);
+    const values = (rows: Row[]) => rows.map((r) => Number(r[valCS.field])).filter(Number.isFinite);
+    const measure = (rows: Row[]) => (rows.length ? combine(values(rows), op) : 0);
 
     emit.type = "bar";
     if (horizontal) emit.options = { ...emit.options, orientation: "horizontal" };
-
-    // Category labels in table order (post-overflow), deduped.
-    const labels: string[] = [];
-    const seen = new Set<string>();
-    for (const row of table) {
-      const v = String(row[catCS.field]);
-      if (!seen.has(v)) { seen.add(v); labels.push(v); }
+    const keys = categoryOrder(table, catCS, encodings[catAxis], measure);
+    let labels = categoryLabels(keys);
+    if (!horizontal && emit.width) {
+      const fitted = fitBandLabels(keys, labels, barRoom(emit.width, keys.length));
+      if (fitted.lossy) {
+        ctx.warn({ severity: "info", code: "labels-shortened",
+          message: `bars are too narrow to name every ${catCS.field}: the axis runs ${labels[0]} to ${labels[labels.length - 1]}`,
+          channel: catAxis, field: catCS.field } as any);
+      }
+      labels = fitted.labels;
     }
     emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field };
     emit.y_axis = { ...emit.y_axis, title: valCS.field };
     const valueFormat = horizontal ? ctx.ntFormatX : ctx.ntFormatY;
     if (valueFormat) emit.y_axis.format = valueFormat;
-    if (valCS.zero?.zero) emit.y_axis.min = 0;
 
-    // Values aligned to the label order; series split by color.
-    const index = new Map(labels.map((l, i) => [l, i]));
-    const series = splitSeries(table, cs, (row) => ({ y: Number(row[valCS.field]) }));
-    const groupField = cs.color?.field ?? cs.group?.field;
-    for (const s of series) {
-      const slots = labels.map(() => ({ y: 0 }));
-      for (const row of table) {
-        const cat = String(row[catCS.field]);
-        const belongs = series.length === 1 || groupField == null || String(row[groupField]) === s.name;
-        if (belongs) slots[index.get(cat)!] = { y: Number(row[valCS.field]) };
-      }
-      s.values = slots;
+    // One series per colour (or group) value, each aligned to the category
+    // order; several rows on one bar combine by the measure's rule.
+    const seriesKeys: string[] = [];
+    const cells = new Map<string, Map<string, Row[]>>();
+    const preferred = groupCS?.ordinalSortOrder?.map(String);
+    if (preferred) for (const g of preferred) { seriesKeys.push(g); cells.set(g, new Map()); }
+    for (const row of table) {
+      if (row[catCS.field] == null) continue;
+      const g = groupCS ? String(row[groupCS.field]) : valCS.field;
+      if (!cells.has(g)) { seriesKeys.push(g); cells.set(g, new Map()); }
+      const k = categoryKey(row[catCS.field]);
+      const bucket = cells.get(g)!;
+      (bucket.get(k) ?? bucket.set(k, []).get(k)!).push(row);
     }
+    const palette = paletteForScheme(groupCS?.colorScheme?.scheme);
+    let combined = false;
+    const series = seriesKeys.map((name, i) => {
+      const bucket = cells.get(name)!;
+      for (const rows of bucket.values()) if (rows.length > 1) combined = true;
+      return {
+        name,
+        values: keys.map((k) => ({ y: measure(bucket.get(k) ?? []) })),
+        ...(groupCS ? { color: palette[i % palette.length] } : {}),
+      };
+    }).filter((s) => cells.get(s.name)!.size > 0);
     emit.data.series = series;
     if (series.length > 1) emit.options = { ...emit.options, stacked: true, show_legend: true };
+
+    // The bar model always draws from zero; pinning zero as the minimum would
+    // only hide bars that go below it.
+    const lowest = Math.min(0, ...series.flatMap((s) => s.values.map((p) => p.y)));
+    if (valCS.zero?.zero && lowest >= 0) emit.y_axis.min = 0;
+
+    if (facets.length) {
+      ctx.warn({ severity: "info", code: "facets-merged",
+        message: `the terminal draws one plot: each bar ${op === "average" ? "averages" : "combines"} its rows across ${facets.join(" and ")} (${op})`,
+        channel: "column", field: facets[0] } as any);
+    } else if (combined && !encodings[valAxis]?.aggregate) {
+      ctx.warn({ severity: "info", code: "rows-combined",
+        message: `several rows share a ${catCS.field}${groupCS ? ` and ${groupCS.field}` : ""}: each bar shows their ${op}`,
+        channel: valAxis, field: valCS.field } as any);
+    }
   },
   encodingActions: [makeSortAction()],
   pivot: makeCartesianPivot({

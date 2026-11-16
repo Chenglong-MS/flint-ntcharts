@@ -78,6 +78,26 @@ func TestSanitize(t *testing.T) {
 			t.Fatalf("changed: %s", got)
 		}
 	})
+	t.Run("rounds the fractional sizes flint 1.1 emits, never data", func(t *testing.T) {
+		in := `{"xAxis":[{"axisLabel":{"fontSize":6.5}}],"grid":{"left":40.4},"series":[{"type":"line","symbolSize":2.6,"data":[[1.5,2.5]]}]}`
+		got := decode(t, Sanitize([]byte(in)))
+		if f := got["xAxis"].([]any)[0].(map[string]any)["axisLabel"].(map[string]any)["fontSize"]; f != float64(7) {
+			t.Fatalf("fontSize = %v", f)
+		}
+		if l := got["grid"].(map[string]any)["left"]; l != float64(40) {
+			t.Fatalf("grid.left = %v", l)
+		}
+		s := got["series"].([]any)[0].(map[string]any)
+		if s["symbolSize"] != float64(3) {
+			t.Fatalf("symbolSize = %v", s["symbolSize"])
+		}
+		if p := s["data"].([]any)[0].([]any); p[0] != 1.5 || p[1] != 2.5 {
+			t.Fatalf("data = %v", p)
+		}
+		if _, err := Render([]byte(`{"xAxis":[{"type":"category","data":["a","b"],"axisLabel":{"fontSize":6.5}}],"yAxis":[{"type":"value"}],"series":[{"type":"bar","data":[3,5]}]}`), 320, 200); err != nil {
+			t.Fatalf("Render: %v", err)
+		}
+	})
 	t.Run("drops a leading category name, keeping the values", func(t *testing.T) {
 		in := `{"series":[{"type":"bar","data":[["Q1",5],["Q2",7]]}]}`
 		data := decode(t, Sanitize([]byte(in)))["series"].([]any)[0].(map[string]any)["data"].([]any)

@@ -14,6 +14,10 @@ export const ntLineChartDef: ChartTemplateDef = {
   instantiate: (_spec: any, rawCtx: any) => {
     const ctx = rawCtx as NtInstantiateContext;
     const { emit, channelSemantics: cs, table } = ctx;
+    if (cs.y?.type !== "quantitative") {
+      throw new Error(`A terminal ${ctx.chartType} measures along y; got y = ${cs.y ? `${cs.y.field} (${cs.y.type})` : "none"}. ` +
+        `Put the measure on y and the ${cs.y?.field ?? "category"} on x.`);
+    }
     const temporal = cs.x?.type === "temporal";
     emit.type = temporal ? "timeseries" : "line";
     emit.x_axis = { ...emit.x_axis, type: temporal ? "time" : "value", title: cs.x?.field };
