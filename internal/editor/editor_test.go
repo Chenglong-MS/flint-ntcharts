@@ -2,6 +2,7 @@ package editor
 
 import (
 	"context"
+	"fmt"
 	"image"
 	"strings"
 	"testing"
@@ -103,11 +104,14 @@ func TestExamplesCompile(t *testing.T) {
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 24})
 	m = next.(model)
 
-	if len(examples) != 14 {
-		t.Fatalf("expected 14 examples, got %d", len(examples))
+	names := []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Pie Chart (raster)", "Combo Chart",
+		"Grouped Bars", "Pyramid", "Density Plot", "Range Area", "Regression",
+		"Stacked Bars", "Long Names", "Net Cash Flow", "Hourly Traffic", "Scatter Groups", "Theme (Economist)", "Streamgraph", "Slope Chart",
+		"Strip Plot", "ECDF", "Lollipop", "Sparklines", "Connected Scatter", "Ranged Dots", "Area Chart", "Diverging Heatmap"}
+	if len(examples) != len(names) {
+		t.Fatalf("expected %d examples, got %d", len(names), len(examples))
 	}
-	for i, want := range []string{"Bar Chart", "Timeseries Line", "Candlestick", "Log Scale", "Heatmap", "Histogram", "Calendar Heatmap", "Pie Chart (raster)", "Combo Chart",
-		"Grouped Bars", "Pyramid", "Density Plot", "Range Area", "Regression"} {
+	for i, want := range names {
 		if examples[i].name != want {
 			t.Fatalf("examples[%d].name = %q, want %q", i, examples[i].name, want)
 		}
@@ -406,7 +410,7 @@ func lastLine(v string) string {
 func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
 	m := sized(t)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/14 · Bar Chart") {
+	if !strings.HasSuffix(last, fmt.Sprintf("1/%d · Bar Chart", len(examples))) {
 		t.Fatalf("last line %q should end with the example number and chart", last)
 	}
 	if w := ansi.StringWidth(last); w != m.w {
@@ -415,13 +419,13 @@ func TestCornerLabelNamesTheExampleAndChart(t *testing.T) {
 
 	next, _ := m.Update(tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl})
 	m = next.(model)
-	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "2/14 · Line Chart") {
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, fmt.Sprintf("2/%d · Line Chart", len(examples))) {
 		t.Fatalf("after ctrl+n the label is %q", last)
 	}
 
 	next, _ = m.Update(tea.KeyPressMsg{Code: '8', Mod: tea.ModAlt})
 	m = next.(model)
-	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, "8/14 · Pie Chart") {
+	if last := ansi.Strip(lastLine(m.View().Content)); !strings.HasSuffix(last, fmt.Sprintf("8/%d · Pie Chart", len(examples))) {
 		t.Fatalf("on the raster example the label is %q", last)
 	}
 }
@@ -430,7 +434,7 @@ func TestCornerLabelFollowsTheEditedSpec(t *testing.T) {
 	m := sized(t)
 	m.src = strings.Replace(examples[0].src, `"Bar Chart"`, `"Scatter Plot"`, 1)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/14 (edited) · Scatter Plot") {
+	if !strings.HasSuffix(last, fmt.Sprintf("1/%d (edited) · Scatter Plot", len(examples))) {
 		t.Fatalf("label %q should show the edit and the chart now in the spec", last)
 	}
 }
@@ -439,7 +443,7 @@ func TestCornerLabelSurvivesALongStatusMessage(t *testing.T) {
 	m := sized(t)
 	m.msg = strings.Repeat("a very long status message ", 20)
 	last := ansi.Strip(lastLine(m.View().Content))
-	if !strings.HasSuffix(last, "1/14 · Bar Chart") || ansi.StringWidth(last) != m.w {
+	if !strings.HasSuffix(last, fmt.Sprintf("1/%d · Bar Chart", len(examples))) || ansi.StringWidth(last) != m.w {
 		t.Fatalf("label lost or row mis-sized: %q (%d cols)", last, ansi.StringWidth(last))
 	}
 }

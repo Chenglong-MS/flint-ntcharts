@@ -41,4 +41,4 @@ require (
 	golang.org/x/sys v0.49.0 // indirect
 )
 
-replace github.com/NimbleMarkets/ntcharts/v2 => github.com/Chenglong-MS/ntcharts/v2 v2.9.1-0.20261116215753-e30f5018c286
+replace github.com/NimbleMarkets/ntcharts/v2 => github.com/Chenglong-MS/ntcharts/v2 v2.9.1-0.20261116221016-805232ede4d3
