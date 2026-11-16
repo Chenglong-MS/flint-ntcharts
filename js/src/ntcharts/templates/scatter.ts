@@ -4,7 +4,7 @@ import type { ChartTemplateDef } from "flint-chart/core";
 import { makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { splitSeries } from "../series.js";
 import type { NtInstantiateContext } from "../assemble.js";
-import { pinFittedYDomain } from "../domain.js";
+import { pinFittedYDomain, pinZeroBaseline } from "../domain.js";
 
 export const ntScatterPlotDef: ChartTemplateDef = {
   chart: "Scatter Plot",
@@ -23,7 +23,7 @@ export const ntScatterPlotDef: ChartTemplateDef = {
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     else if (temporal) emit.x_axis.format = { kind: "time" };
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
 
     if (isCategorical(ctx)) {

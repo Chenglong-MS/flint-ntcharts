@@ -1,7 +1,7 @@
 import {
   resolveChannelSemantics, computeZeroDecision, convertTemporalData,
   computeChannelBudgets, filterOverflow, computeLayout,
-  applyPivot, applyEncodingOverrides, normalizeStaticSeries,
+  applyPivot, applyEncodingOverrides, normalizeStaticSeries, resolveThemeSpec,
 } from "flint-chart/core";
 import type {
   ChartAssemblyInput, ChartTemplateDef, ChannelSemantics, ChartWarning,
@@ -11,6 +11,7 @@ import { ntGetTemplateDef, ntSupportedChartTypes } from "./templates/index.js";
 import { resolveBaseSizeShim, deriveStretchCapsShim, applyAggregationShim } from "./shims.js";
 import { formatSpecToNt, d3TimeToGoLayout } from "./format.js";
 import type { NtSpec, NtSpecOut, NtFormat } from "./types.js";
+import { withThemeInks, type ThemeInks } from "./colormap.js";
 
 // maxStretch: 1 — terminal charts must not exceed the requested base size
 // (terminal cells are a fixed budget, not a freely growable canvas like
@@ -144,7 +145,9 @@ export function assembleNtcharts(input: ChartAssemblyInput): NtSpecOut {
     chartProperties: input.chart_spec.chartProperties, canvasSize: baseSize,
     chartType: template.chart, emit, warn, ntFormatX, ntFormatY, semanticTypes,
   };
-  template.instantiate(emit as any, ctx as any);
+  const inks = themeInks((input as any).theme_spec, warn);
+  withThemeInks(inks, () => template!.instantiate(emit as any, ctx as any));
+  terminalStyle(emit, input.chart_spec.chartProperties, inks);
   applyLogScale(emit, input.chart_spec.chartProperties, channelSemantics, warn);
   warnUnfittedX(emit, channelSemantics, warn);
 
@@ -292,4 +295,56 @@ function axisFormat(cs: ChannelSemantics | undefined, warn: (w: ChartWarning) =>
     return { kind: "time", layout: d3TimeToGoLayout(cs.temporalFormat, warn) };
   }
   return formatSpecToNt(cs.format, warn);
+}
+
+// themeInks reads the series inks of a Flint theme (`theme_spec`: a preset
+// name or a ThemeSpec). Only series colours carry over: a theme's text and
+// axis inks are chosen for its own canvas, and a terminal brings its own.
+function themeInks(themeSpec: unknown, warn: (w: ChartWarning) => void): ThemeInks | undefined {
+  if (themeSpec == null) return undefined;
+  let spec: any;
+  try {
+    spec = resolveThemeSpec(themeSpec as any);
+  } catch {
+    spec = undefined;
+  }
+  const series = spec?.ink?.series;
+  if (!series) {
+    warn({ severity: "info", code: "theme-unknown", message: `theme ${JSON.stringify(themeSpec)} has no series inks the terminal can use` } as ChartWarning);
+    return undefined;
+  }
+  return {
+    categorical: series.categorical, single: series.single,
+    sequential: series.sequential?.stops, diverging: series.diverging?.stops,
+  };
+}
+
+const SYMBOLS = ["•", "×", "+", "○", "◆", "□", "△", "◇"];
+
+// terminalStyle applies the terminal's own styling once a template has
+// filled the spec:
+// - several scatter series also differ by symbol, so they read apart without colour;
+// - a chart with a measured Y axis labels round values (nice ticks, as
+//   Flint's quantitative scales do);
+// - a line or scatter chart draws the zero line when its Y range crosses zero;
+// - `chartProperties.legend` (top, bottom, none) tells a framing host where the legend goes;
+// - a single series takes the theme's single ink.
+function terminalStyle(emit: NtSpec, props: Record<string, unknown> | undefined, inks: ThemeInks | undefined): void {
+  const series = emit.data.series;
+  if (emit.type === "scatter") {
+    let k = 0;
+    if (series.length > 1) for (const s of series) if (!s.symbol) s.symbol = SYMBOLS[k++ % SYMBOLS.length];
+  }
+  const combo = emit.type === "bar" && series.some((s) => s.type === "line");
+  if (["line", "scatter", "timeseries", "ohlc"].includes(emit.type) || combo) emit.options = { ...emit.options, nice_ticks: true };
+  if ((emit.type === "line" || emit.type === "scatter") && emit.y_axis?.scale !== "log") {
+    const ys = series.flatMap((s) => (s.values ?? []).map((p) => p.y)).filter(Number.isFinite);
+    const lo = emit.y_axis?.min ?? Math.min(...ys), hi = emit.y_axis?.max ?? Math.max(...ys);
+    // Only where zero sits well inside the range: a line hugging an axis is noise.
+    const margin = 0.05 * (hi - lo);
+    if (lo < -margin && hi > margin) emit.options = { ...emit.options, zero_line: true };
+  }
+  const legend = props?.legend;
+  if (legend === "top" || legend === "bottom" || legend === "none") emit.options = { ...emit.options, legend_position: legend };
+  if (inks?.single && series.length === 1 && !series[0].color && emit.type !== "heatmap") series[0].color = inks.single;
 }

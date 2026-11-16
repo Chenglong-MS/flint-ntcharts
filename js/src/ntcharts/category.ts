@@ -1,5 +1,10 @@
 import { splitSeries } from "./series.js";
 import { paletteForScheme } from "./colormap.js";
+import { bandTicks } from "./bands.js";
+import { centerSlots } from "./ticks.js";
+
+// Columns the Y axis labels and line take from a line chart's width.
+export const Y_LABEL_ROOM = 9;
 import type { NtInstantiateContext } from "./assemble.js";
 import type { NtSeries } from "./types.js";
 
@@ -58,6 +63,10 @@ export function finishCategorical(ctx: NtInstantiateContext, series: NtSeries[],
     if (line) s.values.sort((a, b) => ranks.get(String(a.x))! - ranks.get(String(b.x))!);
   }
   ctx.emit.x_axis = { type: "category", title: field, labels };
+  const cs = ctx.channelSemantics.x;
+  const ordered = cs.type === "ordinal" || !!cs.ordinalSortOrder?.length;
+  const ticks = bandTicks(ctx, labels, labels, ordered, centerSlots(labels.length, Math.max(1, ctx.emit.width - Y_LABEL_ROOM)), field, "x");
+  if (ticks) ctx.emit.x_axis.tick_labels = ticks;
   ctx.emit.data.series = series;
   if (series.length > 1) ctx.emit.options = { ...ctx.emit.options, show_legend: true };
   if (dropped) ctx.warn({ severity: "warning", code: "invalid-category-point",
@@ -86,7 +95,11 @@ export function categorySeries(ctx: NtInstantiateContext): NtSeries[] {
   ctx.warn({severity: "info", code: "facets-flattened",
     message: "terminal categorical chart draws facets as separate series on one plot"});
   const flat = [...buckets].flatMap(([key, rows]) => splitSeries(rows, semantics, point)
-    .map(s => ({ ...s, name: `${JSON.parse(key).map(String).join(" / ")}: ${s.name}` })));
+    // A facet's series is named by the facet, and by its colour where it has one.
+    .map(s => {
+      const facet = JSON.parse(key).map(String).join(" / ");
+      return { ...s, name: s.name === ctx.channelSemantics.y?.field ? facet : `${facet}: ${s.name}` };
+    }));
   // Series that the colour channel did not tell apart are told apart by facet.
   const palette = paletteForScheme(undefined);
   return flat.map((s, i) => (flat.length > 1 && !s.color ? { ...s, color: palette[i % palette.length] } : s));

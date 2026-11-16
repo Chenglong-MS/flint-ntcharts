@@ -1,14 +1,11 @@
-import { isCategorical, finishCategorical, categorySeries } from "../category.js";
+import { isCategorical, finishCategorical, categorySeries, Y_LABEL_ROOM } from "../category.js";
 import type { ChartTemplateDef } from "flint-chart/core";
 import { makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { splitSeries } from "../series.js";
 import { toMs } from "../temporal.js";
 import type { NtInstantiateContext } from "../assemble.js";
-import { pinFittedYDomain } from "../domain.js";
-import { dateSlots } from "../cadence.js";
-
-// Columns the Y axis labels and line take from the plot's width.
-const Y_LABEL_ROOM = 9;
+import { pinFittedYDomain, pinZeroBaseline } from "../domain.js";
+import { regularDates } from "../cadence.js";
 
 export const ntLineChartDef: ChartTemplateDef = {
   chart: "Line Chart",
@@ -17,15 +14,22 @@ export const ntLineChartDef: ChartTemplateDef = {
   markCognitiveChannel: "position",
   instantiate: (_spec: any, rawCtx: any) => {
     let ctx = rawCtx as NtInstantiateContext;
-    // Regular dates with room for every label are drawn on category slots, so
-    // each label sits under its point (see dateSlots).
+    // Dates at a regular cadence, with at least two columns each, are drawn
+    // on category slots, each point over its date; the axis names them in
+    // the fewest characters that fit (see ticks.ts). ntcharts' time axis
+    // instead labels a fixed 4-column step, a few columns off each date.
     const x0 = ctx.channelSemantics.x;
-    const slots = x0?.type === "temporal"
-      ? dateSlots(ctx.table.map((r) => r[x0.field]), x0.temporalFormat, ctx.emit.width - Y_LABEL_ROOM)
-      : undefined;
-    if (slots) {
-      const order = [...slots.keys()].sort((a, b) => toMs(a) - toMs(b));
-      ctx = { ...ctx, channelSemantics: { ...ctx.channelSemantics, x: { ...x0!, type: "ordinal", ordinalSortOrder: order } } };
+    if (x0?.type === "temporal") {
+      const values = ctx.table.map((r) => r[x0.field]);
+      const dates = values.every((v) => v == null || Number.isFinite(toMs(v))) ? regularDates(values.filter((v) => v != null)) : undefined;
+      if (dates && dates.length <= Math.floor((ctx.emit.width - Y_LABEL_ROOM) / 2)) {
+        const key = (v: unknown) => {
+          const iso = new Date(toMs(v)).toISOString();
+          return iso.endsWith("T00:00:00.000Z") ? iso.slice(0, 10) : iso.slice(0, 16);
+        };
+        const table = ctx.table.map((r) => (r[x0.field] == null ? r : { ...r, [x0.field]: key(r[x0.field]) }));
+        ctx = { ...ctx, table, channelSemantics: { ...ctx.channelSemantics, x: { ...x0, type: "ordinal", ordinalSortOrder: dates.map(key) } } };
+      }
     }
     const { emit, channelSemantics: cs, table } = ctx;
     if (cs.y?.type !== "quantitative") {
@@ -38,15 +42,11 @@ export const ntLineChartDef: ChartTemplateDef = {
     emit.y_axis = { ...emit.y_axis, title: cs.y?.field };
     if (ctx.ntFormatX) emit.x_axis.format = ctx.ntFormatX;
     if (ctx.ntFormatY) emit.y_axis.format = ctx.ntFormatY;
-    if (cs.y?.zero?.zero) emit.y_axis.min = 0;
+    if (cs.y?.zero?.zero) pinZeroBaseline(emit, cs, table);
     else pinFittedYDomain(emit, cs, table);
 
     if (isCategorical(ctx)) {
       finishCategorical(ctx, categorySeries(ctx), true);
-      if (slots) {
-        emit.x_axis!.labels = emit.x_axis!.labels!.map((k) => slots.get(k) ?? k);
-        for (const s of emit.data.series) for (const p of s.values ?? []) p.x = slots.get(String(p.x)) ?? p.x;
-      }
       return;
     }
 

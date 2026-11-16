@@ -97,7 +97,8 @@ export const ntRegressionDef: ChartTemplateDef = {
         const x = curve.from + ((curve.to - curve.from) * i) / (n - 1);
         return { x, y: curve.fit(x) };
       }).filter((p) => Number.isFinite(p.y) && (lo == null || p.y >= lo) && (hi == null || p.y <= hi));
-      curves.push({ name: `${g.name ? `${g.name} ` : ""}(trend)`, values, color: g.color ?? "#ee6666" });
+      // Named as its group, so a legend names each group once; ungrouped, "trend".
+      curves.push({ name: g.name || "trend", values, color: g.color ?? "#ee6666", symbol: "·" });
     }
     // Curves first, so the data points are drawn over them.
     emit.data.series = [...curves, ...points];

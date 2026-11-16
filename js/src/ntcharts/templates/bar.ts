@@ -1,10 +1,18 @@
 import type { ChartTemplateDef } from "flint-chart/core";
 import { detectBandedAxisForceDiscrete, makeCartesianPivot, makeSortAction } from "flint-chart/core";
 import { paletteForScheme } from "../colormap.js";
-import { barRoom, categoryKey, categoryLabels, categoryOrder, combine, combineOp, fitBandLabels } from "../bands.js";
+import { bandTicks, categoryKey, categoryLabels, categoryOrder, combine, combineOp, wantValueLabels } from "../bands.js";
+import { barSlots, ellipsize, tickKind } from "../ticks.js";
 import type { NtInstantiateContext } from "../assemble.js";
 
 type Row = Record<string, unknown>;
+
+/** Whether every name stands whole under its bar. */
+function fitsUnder(labels: string[], width: number): boolean {
+  const { cols } = barSlots(labels.length, width);
+  const room = (cols[1] ?? width + 1) - 1;
+  return labels.every((l) => [...l].length <= room);
+}
 
 export const ntBarChartDef: ChartTemplateDef = {
   chart: "Bar Chart",
@@ -50,19 +58,37 @@ export const ntBarChartDef: ChartTemplateDef = {
     const measure = (rows: Row[]) => (rows.length ? combine(values(rows), op) : 0);
 
     emit.type = "bar";
-    if (horizontal) emit.options = { ...emit.options, orientation: "horizontal" };
-    const keys = categoryOrder(table, catCS, encodings[catAxis], measure);
+    let keys = categoryOrder(table, catCS, encodings[catAxis], measure);
     let labels = categoryLabels(keys);
-    if (!horizontal && emit.width) {
-      const fitted = fitBandLabels(keys, labels, barRoom(emit.width, keys.length));
-      if (fitted.lossy) {
-        ctx.warn({ severity: "info", code: "labels-shortened",
-          message: `bars are too narrow to name every ${catCS.field}: the axis runs ${labels[0]} to ${labels[labels.length - 1]}`,
-          channel: catAxis, field: catCS.field } as any);
-      }
-      labels = fitted.labels;
-    }
     emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field };
+    // The category axis reads in its natural order unless sorted by the measure.
+    const ordered = catCS.type !== "nominal" && !encodings[catAxis]?.sortBy;
+    const asked = ctx.chartProperties?.orientation;
+    let across = asked === "horizontal" || (asked !== "vertical" && horizontal);
+    if (!across && !asked && tickKind(keys, ordered) === "nominal" && !fitsUnder(labels, emit.width) && keys.length * 2 - 1 <= emit.height) {
+      // Names too long to stand under their bars read whole beside them.
+      across = true;
+      ctx.warn({ severity: "info", code: "bars-horizontal",
+        message: `drawn as horizontal bars so each ${catCS.field} name fits`, channel: catAxis, field: catCS.field } as any);
+    }
+    if (across) {
+      emit.options = { ...emit.options, orientation: "horizontal" };
+      // A horizontal bar takes a row and the gap after it.
+      const room = Math.max(1, Math.floor((emit.height + 1) / 2));
+      if (keys.length > room) {
+        ctx.warn({ severity: "warning", code: "overflow",
+          message: `${keys.length - room} of ${keys.length} values in '${catCS.field}' were omitted (showing first ${room} in sort order).`,
+          channel: catAxis, field: catCS.field } as any);
+        keys = keys.slice(0, room);
+        labels = labels.slice(0, room);
+        emit.x_axis.labels = labels;
+      }
+      const cap = Math.max(4, Math.floor(emit.width / 3));
+      if (labels.some((l) => [...l].length > cap)) emit.x_axis.tick_labels = labels.map((l) => ellipsize(l, cap));
+    } else {
+      const ticks = bandTicks(ctx, keys, labels, ordered, barSlots(keys.length, emit.width), catCS.field, catAxis);
+      if (ticks) emit.x_axis.tick_labels = ticks;
+    }
     emit.y_axis = { ...emit.y_axis, title: valCS.field };
     const valueFormat = horizontal ? ctx.ntFormatX : ctx.ntFormatY;
     if (valueFormat) emit.y_axis.format = valueFormat;
@@ -94,6 +120,11 @@ export const ntBarChartDef: ChartTemplateDef = {
     }).filter((s) => cells.get(s.name)!.size > 0);
     emit.data.series = series;
     if (series.length > 1) emit.options = { ...emit.options, stacked: true, show_legend: true };
+
+    // Terminal bars have no value axis, so each bar says its value where the
+    // value fits at its end (chartProperties.valueLabels overrides).
+    const totals = keys.map((_, i) => series.reduce((sum, s) => sum + s.values[i].y, 0));
+    if (wantValueLabels(ctx.chartProperties, totals, emit.y_axis?.format, emit.width, across)) emit.options = { ...emit.options, show_values: true };
 
     // The bar model always draws from zero; pinning zero as the minimum would
     // only hide bars that go below it.

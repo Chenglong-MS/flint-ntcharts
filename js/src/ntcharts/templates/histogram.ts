@@ -2,7 +2,8 @@ import type { ChartTemplateDef } from "flint-chart/core";
 import { makeCartesianPivot } from "flint-chart/core";
 import { paletteForScheme } from "../colormap.js";
 import { binValues } from "../bins.js";
-import { barRoom } from "../bands.js";
+import { bandTicks, wantValueLabels } from "../bands.js";
+import { barSlots } from "../ticks.js";
 import type { NtInstantiateContext } from "../assemble.js";
 
 const DEFAULT_BINS = 10;
@@ -66,14 +67,11 @@ export const ntHistogramDef: ChartTemplateDef = {
 
     // Each bar is named by where its bin starts: a range ("12–18.9") does not
     // fit under a terminal bar, and the next bar's name says where it ends.
-    const labels = edgeLabels(bins.edges.slice(0, bins.counts.length), barRoom(emit.width, bins.counts.length));
-    if (labels.some((l) => !l)) {
-      ctx.warn({ severity: "info", code: "labels-shortened",
-        message: `bars are too narrow to name every bin: ${measure} runs ${edgeLabels([bins.edges[0]])[0]} to ${edgeLabels([bins.edges[bins.edges.length - 1]])[0]}`,
-        channel: "x", field: measure } as any);
-    }
+    const labels = edgeLabels(bins.edges.slice(0, bins.counts.length));
     emit.type = "bar";
     emit.x_axis = { ...emit.x_axis, type: "category", labels, title: measure };
+    const ticks = bandTicks(ctx, labels, labels, true, barSlots(labels.length, emit.width), measure, "x");
+    if (ticks) emit.x_axis.tick_labels = ticks;
     emit.y_axis = { ...emit.y_axis, title: "Count", min: 0 };
 
     const groups: string[] = [];
@@ -95,6 +93,7 @@ export const ntHistogramDef: ChartTemplateDef = {
       };
     });
     if (groups.length > 1) emit.options = { ...emit.options, stacked: true, show_legend: true };
+    if (wantValueLabels(ctx.chartProperties, bins.counts, undefined, emit.width, false)) emit.options = { ...emit.options, show_values: true };
   },
   encodingActions: [],
   pivot: makeCartesianPivot({ permute: [["x", "color"]], shift: ["color"] }),

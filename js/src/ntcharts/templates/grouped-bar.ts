@@ -2,7 +2,8 @@ import type { ChartTemplateDef } from "flint-chart/core";
 import { detectBandedAxisForceDiscrete, makeCartesianPivot, makeSortAction, planBandDodge, resolveDodge } from "flint-chart/core";
 import { ntBarChartDef } from "./bar.js";
 import { paletteForScheme } from "../colormap.js";
-import { barRoom, categoryKey, categoryLabels, categoryOrder, combine, combineOp, fitBandLabels } from "../bands.js";
+import { bandTicks, categoryKey, categoryLabels, categoryOrder, combine, combineOp, wantValueLabels } from "../bands.js";
+import { barSlots } from "../ticks.js";
 import type { NtInstantiateContext } from "../assemble.js";
 
 type Row = Record<string, unknown>;
@@ -117,22 +118,25 @@ export const ntGroupedBarChartDef: ChartTemplateDef = {
       lanes.forEach((g, j) => bars.push({ label: j === 0 ? names[i] : "", group: g, value: measure(cells.get(JSON.stringify([k, g])) ?? []) }));
     });
 
-    let labels = bars.map((b) => b.label);
+    const labels = bars.map((b) => b.label);
+    // Each category is named under its first bar; plan those names over the
+    // columns where the categories start.
+    let tickLabels: string[] | undefined;
     if (!horizontal) {
       const firsts = bars.map((b, i) => (b.label ? i : -1)).filter((i) => i >= 0);
-      const fitted = fitBandLabels(keys, names, barRoom(emit.width, bars.length));
-      firsts.forEach((barIndex, i) => { labels[barIndex] = fitted.labels[i]; });
-      if (fitted.lossy) {
-        ctx.warn({ severity: "info", code: "labels-shortened",
-          message: `bars are too narrow to name every ${catCS.field}: the axis runs ${names[0]} to ${names[names.length - 1]}`,
-          channel: catAxis, field: catCS.field } as any);
+      const { cols } = barSlots(bars.length, emit.width);
+      const ordered = catCS.type !== "nominal" && !encodings[catAxis]?.sortBy;
+      const ticks = bandTicks(ctx, keys, names, ordered, { cols: firsts.map((b) => cols[b]), width: emit.width, anchor: "start" }, catCS.field, catAxis);
+      if (ticks) {
+        tickLabels = labels.map(() => "");
+        firsts.forEach((b, i) => { tickLabels![b] = ticks[i]; });
       }
     }
 
     const palette = paletteForScheme(groupCS.type === "quantitative" ? undefined : groupCS.colorScheme?.scheme);
     emit.type = "bar";
     emit.options = { ...emit.options, stacked: true, show_legend: true, ...(horizontal ? { orientation: "horizontal" } : {}) };
-    emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field };
+    emit.x_axis = { ...emit.x_axis, type: "category", labels, title: catCS.field, ...(tickLabels ? { tick_labels: tickLabels } : {}) };
     emit.y_axis = { ...emit.y_axis, title: valCS.field };
     const valueFormat = horizontal ? ctx.ntFormatX : ctx.ntFormatY;
     if (valueFormat) emit.y_axis.format = valueFormat;
@@ -142,6 +146,10 @@ export const ntGroupedBarChartDef: ChartTemplateDef = {
       color: palette[i % palette.length],
     }));
     if (valCS.zero?.zero && bars.every((b) => b.value >= 0)) emit.y_axis.min = 0;
+    const values = bars.filter((b) => b.group).map((b) => b.value);
+    if (wantValueLabels(ctx.chartProperties, values, emit.y_axis.format, Math.floor(emit.width * values.length / bars.length), horizontal)) {
+      emit.options = { ...emit.options, show_values: true };
+    }
 
     const facets = [cs.column, cs.row].filter(Boolean).map((f) => f!.field);
     if (facets.length) {

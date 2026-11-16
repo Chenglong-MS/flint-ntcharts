@@ -5,8 +5,9 @@ import { edgeLabels } from "../src/ntcharts/templates/histogram.js";
 import { resample } from "../src/ntcharts/templates/sparkline.js";
 import { kde } from "../src/ntcharts/templates/density.js";
 import { fitCurve } from "../src/ntcharts/templates/regression.js";
-import { formatTime, regularDates } from "../src/ntcharts/cadence.js";
-import { barRoom, categoryLabels, fitBandLabels } from "../src/ntcharts/bands.js";
+import { regularDates } from "../src/ntcharts/cadence.js";
+import { barSlots, centerSlots, planTicks, tickKind } from "../src/ntcharts/ticks.js";
+import { categoryLabels } from "../src/ntcharts/bands.js";
 
 // What the terminal draws must say what Flint's other backends say about the
 // same input, or say plainly why it cannot. Each case here was drawn empty,
@@ -165,45 +166,66 @@ describe("date category names", () => {
   });
 });
 
-describe("names under narrow bars", () => {
-  const months = (n: number) => Array.from({ length: n }, (_, i) => new Date(Date.UTC(2020, i, 1)).toISOString().slice(0, 10));
+describe("axis names in the fewest characters that fit", () => {
+  const iso = (y: number, m: number, d = 1, h = 0) => new Date(Date.UTC(y, m, d, h)).toISOString().slice(0, h ? 16 : 10);
+  const plan = (keys: string[], slots: ReturnType<typeof barSlots>, display = keys) =>
+    planTicks(keys, display, tickKind(keys, true), slots).ticks.filter(Boolean);
 
-  it("step dates down to a shorter form rather than let the renderer cut them", () => {
-    const keys = months(24);
-    const labels = categoryLabels(keys);
-    expect(fitBandLabels(keys, labels, 3).labels.slice(0, 3)).toEqual(["'20", "Feb", "Mar"]);
-    expect(fitBandLabels(keys, labels, 3).labels[12]).toBe("'21");
-    const two = fitBandLabels(keys, labels, 2);
-    expect(two.labels.slice(0, 3)).toEqual(["01", "02", "03"]);
-    expect(two.lossy).toBe(true);
+  it("name months by the calendar, the year where it starts, as many as fit", () => {
+    const months = Array.from({ length: 24 }, (_, i) => iso(2020, i));
+    expect(plan(months, barSlots(24, 64))).toEqual(["2020", "Apr", "Jul", "Oct", "2021", "Apr", "Jul", "Oct"]);
+    expect(plan(months.slice(0, 7), centerSlots(7, 55))).toEqual(["2020", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]);
   });
 
-  it("name days by the day of the month only when the bars run day by day", () => {
-    const sparse = Array.from({ length: 16 }, (_, i) => new Date(Date.UTC(2020, 0, 1 + 45 * i)).toISOString().slice(0, 10));
-    const fitted = fitBandLabels(sparse, categoryLabels(sparse), 2);
-    expect(fitted.labels.filter(Boolean)).toEqual(["20", "21"]);
+  it("name days, weeks and hours by their own periods", () => {
+    const days = Array.from({ length: 31 }, (_, i) => iso(2024, 2, 1 + i));
+    expect(plan(days, barSlots(31, 64))).toEqual(["Mar", "8", "15", "22"]);
+    const hours = Array.from({ length: 24 }, (_, i) => `2024-03-14T${String(i).padStart(2, "0")}:00`);
+    expect(plan(hours, barSlots(24, 64))[0]).toBe("3/14");
+    expect(plan(hours, barSlots(24, 64))).toContain("06");
   });
 
-  it("leave out a number that does not fit rather than show its first digit", () => {
-    const keys = ["8", "9", "10", "11"];
-    expect(fitBandLabels(keys, keys, 1)).toEqual({ labels: ["8", "9", "", ""], lossy: true });
+  it("name a year where its first date falls, even on an irregular axis", () => {
+    const dates = Array.from({ length: 24 }, (_, i) => iso(2020, 0, 15 + 45 * i));
+    expect(plan(dates, barSlots(24, 64))).toEqual(["Jan", "Jul", "2021", "Jul", "2022", "Jul"]);
   });
 
-  it("name hours of the day by the hour", () => {
-    const keys = ["00:00", "01:00", "02:00"];
-    expect(fitBandLabels(keys, keys, 2)).toEqual({ labels: ["00", "01", "02"], lossy: false });
+  it("name hours of the day every few hours, however the column is typed", () => {
+    const clock = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, "0")}:00`);
+    expect(tickKind(clock, false)).toBe("ordinal");
+    expect(plan(clock, barSlots(24, 64)).slice(0, 4)).toEqual(["00", "02", "04", "06"]);
   });
 
-  it("keep word prefixes, which read as abbreviations", () => {
-    expect(fitBandLabels(["Laptop", "Phone"], ["Laptop", "Phone"], 3).labels).toEqual(["Laptop", "Phone"]);
+  it("name numbers at nice values and years every five", () => {
+    const ranks = Array.from({ length: 30 }, (_, i) => String(i + 1));
+    expect(plan(ranks, barSlots(30, 64))).toEqual(["2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22", "24", "26", "28", "30"]);
+    const years = Array.from({ length: 30 }, (_, i) => String(1995 + i));
+    expect(plan(years, barSlots(30, 64))).toEqual(["1995", "2000", "2005", "2010", "2015", "2020"]);
   });
 
-  it("fit the bar chart's names to its bars and give the range when some go", () => {
-    const rows = Array.from({ length: 30 }, (_, i) => ({ n: i + 1, v: i }));
-    const out = assembleNtcharts(chart("Bar Chart", rows, { x: { field: "n" }, y: { field: "v" } }, { n: "Rank", v: "Quantity" }));
-    const room = barRoom(out.width, out.x_axis!.labels!.length);
-    for (const l of out.x_axis!.labels!) expect(l.length).toBeLessThanOrEqual(room);
-    expect((out._warnings ?? []).find((w: any) => w.code === "labels-shortened")?.message).toContain("1 to 30");
+  it("name every k-th ordered category, and cut nominal ones with an ellipsis rather than skip them", () => {
+    const stages = Array.from({ length: 30 }, (_, i) => `Stage ${i + 1}`);
+    expect(plan(stages, centerSlots(30, 64))[1]).toBe("Stage 8");
+    const names = ["Electronics", "Clothing", "Toys"];
+    const nominal = planTicks(names, names, tickKind(names, false), barSlots(3, 18));
+    expect(nominal).toEqual({ ticks: ["Elec…", "Clot…", "Toys"], shortened: true });
+  });
+
+  it("keep a date axis sorted by value from being thinned as if it ran in time", () => {
+    expect(tickKind(["2020-03-01", "2020-01-01"], true)).toBe("ordinal");
+  });
+
+  it("turn bars whose names do not fit, and print bar values where they fit", () => {
+    const rows = ["Electronics", "Home & Garden", "Automotive", "Toys"].map((c, i) => ({ c, v: 10 * (i + 1) }));
+    const out = assembleNtcharts(chart("Bar Chart", rows, { x: { field: "c" }, y: { field: "v" } }, { c: "Category", v: "Quantity" }, { baseSize: { width: 30, height: 12 } }));
+    expect(out.options?.orientation).toBe("horizontal");
+    expect(codes(out)).toContain("bars-horizontal");
+    expect(out.options?.show_values).toBe(true);
+    const kept = assembleNtcharts(chart("Bar Chart", rows, { x: { field: "c" }, y: { field: "v" } }, { c: "Category", v: "Quantity" },
+      { baseSize: { width: 30, height: 12 }, chartProperties: { orientation: "vertical", valueLabels: false } }));
+    expect(kept.options?.orientation).toBeUndefined();
+    expect(kept.options?.show_values).toBeUndefined();
+    expect(kept.x_axis!.tick_labels!.every((t: string) => t.length <= 6)).toBe(true);
   });
 });
 
@@ -267,7 +289,7 @@ describe("chart types added for flint 1.1", () => {
     expect(exp.fit(4)).toBeCloseTo(2 * Math.exp(2));
     const rows = Array.from({ length: 20 }, (_, i) => ({ x: i, y: 3 * i + (i % 3) }));
     const out = assembleNtcharts(chart("Regression", rows, { x: { field: "x" }, y: { field: "y" } }, { x: "Quantity", y: "Quantity" }));
-    expect(out.data.series[0]).toMatchObject({ name: "(trend)", color: "#ee6666" });
+    expect(out.data.series[0]).toMatchObject({ name: "trend", color: "#ee6666", symbol: "·" });
     expect(out.data.series[0].values!.length).toBe(out.width);
     expect(out.data.series[1].values).toHaveLength(20);
   });
@@ -278,10 +300,9 @@ describe("dates on a line chart's X axis", () => {
   const draw = (rows: Record<string, unknown>[]) =>
     assembleNtcharts(chart("Line Chart", rows, { x: { field: "d" }, y: { field: "v" } }, { d: "Date", v: "Quantity" }));
 
-  it("put a regular series on date slots, each label under its point", () => {
+  it("put a regular series on date slots, named by the calendar under each point", () => {
     const out = draw(months);
-    expect(out.x_axis).toMatchObject({ type: "category", labels: ["Jan", "Feb", "Mar", "Apr"] });
-    expect(out.data.series[0].values!.map((p) => p.x)).toEqual(["Jan", "Feb", "Mar", "Apr"]);
+    expect(out.x_axis).toMatchObject({ type: "category", labels: months.map((m) => m.d), tick_labels: ["2026", "Feb", "Mar", "Apr"] });
   });
 
   it("keep a time axis for irregular dates, gaps or more points than labels fit", () => {
@@ -296,6 +317,51 @@ describe("dates on a line chart's X axis", () => {
     expect(regularDates(["2020-01-01", "2020-04-01", "2020-07-01"])).toHaveLength(3);
     expect(regularDates(["2020-01-01", "2020-01-08", "2020-01-15"])).toHaveLength(3);
     expect(regularDates(["2020-01-01", "2020-01-08", "2020-01-16"])).toBeUndefined();
-    expect(formatTime(Date.UTC(2026, 2, 5), "%b %d, %Y")).toBe("Mar 05, 2026");
+  });
+});
+
+describe("styling a terminal chart", () => {
+  const rows = ["a", "b"].flatMap((g) => [1, 2, 3].map((x) => ({ g, x, y: x * (g === "a" ? 1 : -1) })));
+  const enc = { x: { field: "x" }, y: { field: "y" } };
+  const st = { x: "Quantity", y: "Quantity", g: "Category" };
+
+  it("take a Flint theme's series inks", () => {
+    const one = assembleNtcharts({ ...chart("Bar Chart", [{ c: "a", v: 1 }, { c: "b", v: 2 }], { x: { field: "c" }, y: { field: "v" } }, { c: "Category", v: "Quantity" }), theme_spec: "economist" } as any);
+    expect(one.data.series[0].color).toBe("#006ba2");
+    const two = assembleNtcharts({ ...chart("Scatter Plot", rows, { ...enc, color: { field: "g" } }, st), theme_spec: "economist" } as any);
+    expect(two.data.series.map((s) => s.color)).toEqual(["#006ba2", "#3ebcd2"]);
+  });
+
+  it("set scatter series apart by symbol and draw zero where the range crosses it", () => {
+    const out = assembleNtcharts(chart("Scatter Plot", rows, { ...enc, color: { field: "g" } }, st));
+    expect(out.data.series.map((s) => s.symbol)).toEqual(["•", "×"]);
+    expect(out.options?.zero_line).toBe(true);
+    const positive = assembleNtcharts(chart("Line Chart", rows.filter((r) => r.y > 0), enc, st));
+    expect(positive.options?.zero_line).toBeUndefined();
+    expect([out.options?.nice_ticks, positive.options?.nice_ticks]).toEqual([true, true]);
+  });
+
+  it("pass the legend position through", () => {
+    const out = assembleNtcharts(chart("Scatter Plot", rows, { ...enc, color: { field: "g" } }, st, { chartProperties: { legend: "bottom" } }));
+    expect(out.options?.legend_position).toBe("bottom");
+  });
+});
+
+describe("zero baselines", () => {
+  it("keep negative points on the plot when the axis includes zero", () => {
+    const rows = [{ x: 1, y: -3 }, { x: 2, y: 4 }];
+    for (const type of ["Scatter Plot", "Line Chart"]) {
+      const out = assembleNtcharts(chart(type, rows, { x: { field: "x" }, y: { field: "y" } }, { x: "Quantity", y: "Quantity" }));
+      expect(out.y_axis?.min, type).toBeUndefined();
+    }
+    const below = assembleNtcharts(chart("Scatter Plot", [{ x: 1, y: -3 }, { x: 2, y: -1 }], { x: { field: "x" }, y: { field: "y" } }, { x: "Quantity", y: "Quantity" }));
+    expect(below.y_axis?.max).toBe(0);
+  });
+
+  it("never pad a fitted range across zero", () => {
+    const rows = [0.8, 3, 7.5, 12, 18.6].map((y, x) => ({ x, y }));
+    const out = assembleNtcharts(chart("Scatter Plot", rows, { x: { field: "x" }, y: { field: "y" } }, { x: "Quantity", y: "Quantity" }));
+    expect(out.y_axis?.min).toBe(0);
+    expect(out.y_axis?.max).toBeGreaterThan(18.6);
   });
 });

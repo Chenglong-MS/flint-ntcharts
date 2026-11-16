@@ -48,6 +48,9 @@
     "min": 100.50500000000001,
     "max": 120.195
   },
+  "options": {
+    "nice_ticks": true
+  },
   "_width": 400,
   "_height": 300
 }
