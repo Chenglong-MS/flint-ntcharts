@@ -178,8 +178,9 @@ that should include zero (ECharts'
 default when `scale` is unset or false) gets an explicit 0, since go-analyze fits its own range and
 could start a bar chart above its shortest bar. Points against a category Y axis (a ranged dot plot)
 and lines whose X goes back and forth (a connected scatter plot's path) cannot be drawn, so `Render`
-returns `ErrUnsupported` and viewers fall back to text. go-analyze formats Y labels to two decimals,
-so small values (densities) read coarsely, and it misreads flint's faceted grids.
+returns `ErrUnsupported` and viewers fall back to text. Values below 1 keep three significant
+digits, where go-analyze's own two decimals would print a density axis as `0.01` throughout.
+go-analyze still misreads flint's faceted grids.
 
 ### Build provenance
 
